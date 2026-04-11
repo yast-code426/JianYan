@@ -7,7 +7,10 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e1e2a'/%3E%3Cstop offset='100%25' stop-color='%233a5a8c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='50' y='72' font-family='Arial' font-size='72' font-weight='700' fill='url(%23g)' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" id="hljs-dark">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css" id="hljs-light" disabled>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -20,7 +23,6 @@
       color: #1e1e2a;
       line-height: 1.5;
     }
-    /* 全屏应用容器 */
     .app {
       width: 100vw;
       height: 100vh;
@@ -35,7 +37,21 @@
       box-shadow: none;
       position: relative;
     }
-    /* 设置侧边栏 (全屏右侧抽屉) */
+    .history-sidebar {
+      position: absolute;
+      top: 0; left: -320px;
+      width: 300px; height: 100%;
+      background: #ffffff;
+      box-shadow: 8px 0 30px rgba(0,0,0,0.08);
+      transition: left 0.25s ease;
+      z-index: 50;
+      border-right: 1px solid #eef2f6;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+      overflow-y: auto;
+    }
+    .history-sidebar.open { left: 0; }
     .settings-sidebar {
       position: absolute;
       top: 0; right: -380px;
@@ -51,19 +67,19 @@
       overflow-y: auto;
     }
     .settings-sidebar.open { right: 0; }
-    .settings-header {
+    .sidebar-header {
       padding: 8px 20px 20px 20px;
       border-bottom: 1px solid #eef2f6;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    .settings-header h3 { font-weight: 600; font-size: 18px; color: #1e293b; }
-    .close-settings {
+    .sidebar-header h3 { font-weight: 600; font-size: 18px; color: #1e293b; }
+    .close-sidebar {
       background: none; border: none; font-size: 20px; cursor: pointer;
       color: #68748e; padding: 6px; border-radius: 40px;
     }
-    .close-settings:hover { background: #f0f4f9; }
+    .close-sidebar:hover { background: #f0f4f9; }
     .settings-section { padding: 20px; border-bottom: 1px solid #f0f4f9; }
     .settings-section h4 {
       font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;
@@ -93,20 +109,29 @@
       border: none; cursor: pointer;
     }
     .ad-btn:hover { background: #2d3448; }
-    .history-list { max-height: 240px; overflow-y: auto; }
+    .history-list { max-height: 400px; overflow-y: auto; padding: 0 20px; }
     .history-item {
       padding: 12px 0; border-bottom: 1px solid #f0f4f9; font-size: 14px;
       cursor: pointer; color: #334155; display: flex; align-items: center; gap: 8px;
     }
     .history-item i { color: #7c8ea8; font-size: 13px; width: 16px; }
     .history-item:hover { background: #fafcff; }
+    .history-actions {
+      padding: 16px 20px; border-top: 1px solid #f0f4f9; margin-top: auto;
+    }
+    .action-btn {
+      background: #f2f6fc; border: 1px solid #dee9f2; border-radius: 30px;
+      padding: 8px 16px; font-size: 13px; color: #1e3a5f; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; margin-right: 8px; margin-bottom: 8px;
+      width: 100%; justify-content: center;
+    }
+    .action-btn i { font-size: 13px; }
     .about-link {
       display: flex; align-items: center; gap: 12px; padding: 12px 0;
       color: #1e293b; text-decoration: none; border-radius: 16px; transition: 0.1s;
     }
     .about-link i { font-size: 20px; color: #00a1d6; width: 24px; }
     .about-link:hover { background: #f5f9ff; padding-left: 8px; }
-    /* 设置项行 */
     .setting-row {
       display: flex; align-items: center; justify-content: space-between;
       padding: 10px 0;
@@ -116,7 +141,6 @@
       padding: 6px 12px; border-radius: 20px; border: 1px solid #e2e8f0;
       background: #f8fafd; font-size: 13px; outline: none;
     }
-    /* 头部 */
     .app-header {
       padding: 12px 24px; border-bottom: 1px solid #f0f2f5;
       display: flex; align-items: center; justify-content: space-between; background: #ffffff;
@@ -127,6 +151,12 @@
       background: linear-gradient(135deg, #1e1e2a 0%, #3a5a8c 100%);
       -webkit-background-clip: text; background-clip: text; color: transparent;
     }
+    .history-toggle-btn {
+      background: transparent; border: none; font-size: 24px; cursor: pointer;
+      color: #3a5a8c; padding: 6px; border-radius: 40px; display: flex;
+      align-items: center; justify-content: center;
+    }
+    .history-toggle-btn:hover { background: #f0f4f9; }
     .yast-btn {
       background: #f2f6fc; border: none; padding: 6px 14px; border-radius: 40px;
       font-size: 13px; font-weight: 500; color: #1e3a5f; cursor: pointer;
@@ -141,7 +171,6 @@
       display: flex; align-items: center; gap: 6px; transition: 0.15s;
     }
     .settings-icon-btn:hover { background: #ffffff; border-color: #a0b3d9; }
-    /* 聊天区域 */
     .chat-wrapper {
       flex: 1; overflow-y: auto; padding: 20px 24px 8px 24px;
       display: flex; flex-direction: column; background: #ffffff;
@@ -167,6 +196,7 @@
       margin: 8px 0;
       position: relative;
     }
+    .bubble pre code.hljs { background: transparent; padding: 0; }
     .code-block-header {
       display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 4px;
     }
@@ -219,12 +249,13 @@
     }
     .upload-label { cursor: pointer; padding: 8px; color: #54657e; font-size: 20px; }
     .upload-label:hover { color: #1e293b; }
-    .send-btn {
+    .send-btn, .stop-btn {
       background: #1a1f2e; border: none; width: 48px; height: 48px;
       border-radius: 48px; color: white; font-size: 20px; cursor: pointer;
       transition: 0.15s; border: 1px solid #2d3445;
     }
-    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .stop-btn { background: #b91c1c; border-color: #991b1b; display: none; }
+    .send-btn:disabled, .stop-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .overlay {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.2); z-index: 40; display: none;
@@ -242,7 +273,6 @@
       0%, 60%, 100% { transform: translateY(0); }
       30% { transform: translateY(-6px); }
     }
-    /* 预览模态框 */
     .preview-modal {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.5); z-index: 100; display: none;
@@ -267,11 +297,26 @@
 <div class="app">
   <div class="overlay" id="overlay"></div>
 
-  <!-- 设置侧边栏 -->
+  <div class="history-sidebar" id="historySidebar">
+    <div class="sidebar-header">
+      <h3><i class="fa-regular fa-clock" style="margin-right: 8px;"></i>历史记录</h3>
+      <button class="close-sidebar" id="closeHistoryBtn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="history-list" id="historyListContainer">
+      <div class="history-item" onclick="restoreHistory('你好，介绍一下简言')"><i class="fa-regular fa-message"></i> 你好，介绍一下简言</div>
+      <div class="history-item" onclick="restoreHistory('用Python写一个快速排序')"><i class="fa-regular fa-message"></i> 用Python写一个快速排序</div>
+      <div class="history-item" onclick="restoreHistory('生成一个员工表(姓名,年龄,部门)')"><i class="fa-regular fa-message"></i> 生成一个员工表</div>
+    </div>
+    <div class="history-actions">
+      <button class="action-btn" id="clearAllHistoryBtn"><i class="fa-regular fa-trash-can"></i> 清空历史</button>
+      <button class="action-btn" id="exportHistoryBtn"><i class="fa-regular fa-file-export"></i> 导出历史</button>
+    </div>
+  </div>
+
   <div class="settings-sidebar" id="settingsSidebar">
-    <div class="settings-header">
+    <div class="sidebar-header">
       <h3><i class="fa-solid fa-gear" style="margin-right: 8px;"></i>设置</h3>
-      <button class="close-settings" id="closeSettingsBtn"><i class="fa-solid fa-xmark"></i></button>
+      <button class="close-sidebar" id="closeSettingsBtn"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="settings-section">
       <h4> 剩余Token</h4>
@@ -300,11 +345,10 @@
       </div>
     </div>
     <div class="settings-section">
-      <h4> 历史记录</h4>
-      <div class="history-list" id="historyList">
-        <div class="history-item" onclick="restoreHistory('你好，介绍一下简言')"><i class="fa-regular fa-message"></i> 你好，介绍一下简言</div>
-        <div class="history-item" onclick="restoreHistory('用Python写一个快速排序')"><i class="fa-regular fa-message"></i> 用Python写一个快速排序</div>
-        <div class="history-item" onclick="restoreHistory('生成一个员工表(姓名,年龄,部门)')"><i class="fa-regular fa-message"></i> 生成一个员工表</div>
+      <h4> 对话管理</h4>
+      <div>
+        <button class="action-btn" id="clearConversationBtn"><i class="fa-regular fa-trash-can"></i> 清空对话</button>
+        <button class="action-btn" id="exportConversationBtn"><i class="fa-regular fa-file-export"></i> 导出对话</button>
       </div>
     </div>
     <div class="settings-section">
@@ -319,7 +363,6 @@
     </div>
   </div>
 
-  <!-- 预览模态框 -->
   <div class="preview-modal" id="previewModal">
     <div class="preview-content">
       <div class="preview-header">
@@ -330,9 +373,9 @@
     </div>
   </div>
 
-  <!-- 主界面 -->
   <header class="app-header">
     <div class="brand">
+      <button class="history-toggle-btn" id="historyToggleBtn" title="历史记录"><i class="fa-solid fa-bars"></i></button>
       <h1>简言</h1>
     </div>
     <div class="header-actions">
@@ -365,6 +408,7 @@
         <label for="fileInput" class="upload-label" title="上传文件"><i class="fa-solid fa-paperclip"></i></label>
       </div>
       <button class="send-btn" id="sendBtn"><i class="fa-solid fa-arrow-up"></i></button>
+      <button class="stop-btn" id="stopBtn"><i class="fa-solid fa-stop"></i></button>
     </div>
   </div>
 </div>
@@ -373,13 +417,11 @@
   (function(){
     "use strict";
 
-    // 配置
     const API_KEY = 'sk-HH8qKvugcKzbIYdD9jpiTrl6L1LYafABTJfWjH6VpvzMO3hW';
     const API_BASE = 'https://api.gemapi.ai';
     const MODEL_OPTIONS = ['[满血A]gemini-3-pro-preview-thinking-512', 'gemini-3-pro-preview-thinking-512', 'gemini-3-pro', 'gemini-pro'];
     let currentModelIndex = 0;
     
-    // 状态
     let conversationMessages = [];
     let isLoading = false;
     let currentController = null;
@@ -388,14 +430,17 @@
     let webSearchEnabled = false;
     let deepSearchEnabled = false;
 
-    // DOM
     const messagesContainer = document.getElementById('messagesContainer');
     const chatWrapper = document.getElementById('chatWrapper');
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
+    const stopBtn = document.getElementById('stopBtn');
     const fileInput = document.getElementById('fileInput');
+    const historySidebar = document.getElementById('historySidebar');
     const settingsSidebar = document.getElementById('settingsSidebar');
     const overlay = document.getElementById('overlay');
+    const historyToggleBtn = document.getElementById('historyToggleBtn');
+    const closeHistoryBtn = document.getElementById('closeHistoryBtn');
     const openSettingsBtn = document.getElementById('openSettingsBtn');
     const closeSettingsBtn = document.getElementById('closeSettingsBtn');
     const yastDevBtn = document.getElementById('yastDevBtn');
@@ -407,8 +452,42 @@
     const codeThemeSelect = document.getElementById('codeThemeSelect');
     const previewModal = document.getElementById('previewModal');
     const previewBody = document.getElementById('previewBody');
+    const clearConversationBtn = document.getElementById('clearConversationBtn');
+    const exportConversationBtn = document.getElementById('exportConversationBtn');
+    const clearAllHistoryBtn = document.getElementById('clearAllHistoryBtn');
+    const exportHistoryBtn = document.getElementById('exportHistoryBtn');
+    const historyListContainer = document.getElementById('historyListContainer');
+    const hljsDark = document.getElementById('hljs-dark');
+    const hljsLight = document.getElementById('hljs-light');
 
-    // 初始化广告
+    marked.setOptions({
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+        return hljs.highlightAuto(code).value;
+      },
+      breaks: true,
+      gfm: true
+    });
+
+    function updateCodeTheme() {
+      const theme = codeThemeSelect.value;
+      if (theme === 'dark') {
+        hljsDark.disabled = false;
+        hljsLight.disabled = true;
+      } else {
+        hljsDark.disabled = true;
+        hljsLight.disabled = false;
+      }
+      document.querySelectorAll('.bubble pre').forEach(pre => {
+        pre.style.background = theme === 'dark' ? '#1e1e2e' : '#f5f5f5';
+        pre.style.color = theme === 'dark' ? '#e2e8f0' : '#1e1e2a';
+      });
+    }
+    codeThemeSelect.addEventListener('change', updateCodeTheme);
+    updateCodeTheme();
+
     function renderAd() {
       if (adClicked) {
         adContainer.innerHTML = '';
@@ -435,7 +514,6 @@
       tokenDisplay.textContent = tokenBalance.toLocaleString();
     }
 
-    // 工具按钮切换
     webSearchBtn.addEventListener('click', () => {
       webSearchEnabled = !webSearchEnabled;
       webSearchBtn.classList.toggle('active', webSearchEnabled);
@@ -445,77 +523,41 @@
       deepSearchBtn.classList.toggle('active', deepSearchEnabled);
     });
 
-    // 字体大小设置
     fontSizeSelect.addEventListener('change', (e) => {
       document.querySelectorAll('.bubble').forEach(el => el.style.fontSize = e.target.value);
     });
-    codeThemeSelect.addEventListener('change', (e) => {
-      const theme = e.target.value;
-      document.querySelectorAll('.bubble pre').forEach(pre => {
-        pre.style.background = theme === 'dark' ? '#1e1e2e' : '#f5f5f5';
-        pre.style.color = theme === 'dark' ? '#e2e8f0' : '#1e1e2a';
-      });
-    });
 
-    // 辅助函数
     function scrollToBottom() {
       setTimeout(() => chatWrapper.scrollTo({ top: chatWrapper.scrollHeight, behavior: 'smooth' }), 50);
     }
 
-    // 增强渲染：支持代码块复制/预览/下载，表格预览
-    function renderMarkdownWithFeatures(text) {
-      if (!text) return '';
-      let html = marked.parse(text, { breaks: true, gfm: true });
-      
-      // 处理代码块：添加操作按钮
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = html;
-      tempDiv.querySelectorAll('pre').forEach((pre, index) => {
+    function attachCodeBlockFeatures(bubbleElement) {
+      bubbleElement.querySelectorAll('pre').forEach((pre) => {
         const code = pre.querySelector('code');
         const codeText = code ? code.textContent : pre.textContent;
         const lang = code && code.className ? code.className.replace('language-', '') : 'text';
-        
         const headerDiv = document.createElement('div');
         headerDiv.className = 'code-block-header';
         headerDiv.innerHTML = `
-          <button class="code-btn copy-code" data-code="${encodeURIComponent(codeText)}"><i class="fa-regular fa-copy"></i> 复制</button>
-          <button class="code-btn preview-code" data-code="${encodeURIComponent(codeText)}" data-lang="${lang}"><i class="fa-regular fa-eye"></i> 预览</button>
-          <button class="code-btn download-code" data-code="${encodeURIComponent(codeText)}" data-lang="${lang}"><i class="fa-solid fa-download"></i> 下载</button>
+          <button class="code-btn copy-code"><i class="fa-regular fa-copy"></i> 复制</button>
+          <button class="code-btn preview-code"><i class="fa-regular fa-eye"></i> 预览</button>
+          <button class="code-btn download-code"><i class="fa-solid fa-download"></i> 下载</button>
         `;
         pre.parentNode.insertBefore(headerDiv, pre);
-        
-        // 应用代码主题
-        const theme = codeThemeSelect.value;
-        pre.style.background = theme === 'dark' ? '#1e1e2e' : '#f5f5f5';
-        pre.style.color = theme === 'dark' ? '#e2e8f0' : '#1e1e2a';
-      });
-      
-      // 绑定代码块按钮事件
-      tempDiv.querySelectorAll('.copy-code').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        const copyBtn = headerDiv.querySelector('.copy-code');
+        const previewBtn = headerDiv.querySelector('.preview-code');
+        const downloadBtn = headerDiv.querySelector('.download-code');
+        copyBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          const code = decodeURIComponent(btn.dataset.code);
-          navigator.clipboard?.writeText(code).then(() => {
-            alert('代码已复制');
-          }).catch(() => alert('复制失败'));
+          navigator.clipboard?.writeText(codeText).then(() => alert('代码已复制')).catch(() => alert('复制失败'));
         });
-      });
-      
-      tempDiv.querySelectorAll('.preview-code').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        previewBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          const code = decodeURIComponent(btn.dataset.code);
-          const lang = btn.dataset.lang;
-          showPreview(code, lang);
+          showPreview(codeText, lang);
         });
-      });
-      
-      tempDiv.querySelectorAll('.download-code').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        downloadBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          const code = decodeURIComponent(btn.dataset.code);
-          const lang = btn.dataset.lang;
-          const blob = new Blob([code], { type: 'text/plain' });
+          const blob = new Blob([codeText], { type: 'text/plain' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
@@ -524,9 +566,8 @@
           URL.revokeObjectURL(url);
         });
       });
-      
-      // 表格增加预览下载
-      tempDiv.querySelectorAll('table').forEach(table => {
+
+      bubbleElement.querySelectorAll('table').forEach(table => {
         const wrap = document.createElement('div');
         wrap.style.position = 'relative';
         table.parentNode.insertBefore(wrap, table);
@@ -541,7 +582,14 @@
         btnDiv.querySelector('.preview-table').addEventListener('click', () => showTablePreview(table));
         btnDiv.querySelector('.download-table').addEventListener('click', () => downloadTableAsCSV(table));
       });
-      
+    }
+
+    function renderMarkdownWithFeatures(text) {
+      if (!text) return '';
+      const html = marked.parse(text);
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      attachCodeBlockFeatures(tempDiv);
       return tempDiv.innerHTML;
     }
 
@@ -556,6 +604,8 @@
         previewBody.innerHTML = marked.parse(content);
       } else if (['python', 'js', 'javascript', 'java', 'cpp', 'c', 'json'].includes(type)) {
         previewBody.innerHTML = `<pre><code>${escapeHtml(content)}</code></pre>`;
+        previewBody.querySelector('pre code').textContent = content;
+        hljs.highlightElement(previewBody.querySelector('code'));
       } else {
         previewBody.innerHTML = `<pre>${escapeHtml(content)}</pre>`;
       }
@@ -596,7 +646,6 @@
       div.className = `message ${role}`;
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
-      
       if (role === 'user') {
         bubble.textContent = content;
         div.appendChild(bubble);
@@ -628,7 +677,6 @@
       document.getElementById('typingIndicator')?.remove();
     }
 
-    // API调用
     async function trySendWithModel(content) {
       for (let i = currentModelIndex; i < MODEL_OPTIONS.length; i++) {
         const model = MODEL_OPTIONS[i];
@@ -667,7 +715,9 @@
       conversationMessages.push({ role: 'user', content: userContent });
       
       userInput.value = ''; userInput.style.height = 'auto'; fileInput.value = '';
-      isLoading = true; sendBtn.disabled = true;
+      isLoading = true; 
+      sendBtn.style.display = 'none';
+      stopBtn.style.display = 'inline-flex';
       addTypingIndicator();
       currentController = new AbortController();
       
@@ -709,17 +759,78 @@
         removeTypingIndicator();
         if (e.name !== 'AbortError') appendMessage('assistant', `请求失败: ${e.message}`);
       } finally {
-        isLoading = false; sendBtn.disabled = false; currentController = null;
+        isLoading = false; 
+        sendBtn.style.display = 'inline-flex';
+        stopBtn.style.display = 'none';
+        currentController = null;
       }
+    }
+
+    function stopGeneration() {
+      if (currentController) {
+        currentController.abort();
+        currentController = null;
+      }
+      isLoading = false;
+      sendBtn.style.display = 'inline-flex';
+      stopBtn.style.display = 'none';
+      removeTypingIndicator();
+    }
+
+    function clearConversation() {
+      messagesContainer.innerHTML = '';
+      const welcomeDiv = document.createElement('div');
+      welcomeDiv.className = 'message assistant';
+      welcomeDiv.innerHTML = `<div class="bubble">你好，我是 <strong>简言</strong>，由 B站 yast喵~ 开发。<br>支持联网搜索、深度求索，可上传多种文件。<br>点击右上角「设置」查看更多功能。</div>`;
+      messagesContainer.appendChild(welcomeDiv);
+      conversationMessages = [];
+    }
+
+    function exportConversation() {
+      const messages = [];
+      document.querySelectorAll('.message').forEach(msg => {
+        const bubble = msg.querySelector('.bubble');
+        if (!bubble) return;
+        const role = msg.classList.contains('user') ? '用户' : '简言';
+        const text = bubble.innerText || bubble.textContent;
+        messages.push(`${role}: ${text}`);
+      });
+      const blob = new Blob([messages.join('\n\n')], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `简言对话_${new Date().toISOString().slice(0,10)}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function clearHistoryList() {
+      historyListContainer.innerHTML = '';
+    }
+
+    function exportHistoryList() {
+      const items = historyListContainer.querySelectorAll('.history-item');
+      const lines = Array.from(items).map(item => item.textContent.trim());
+      const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '简言历史记录.txt';
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     window.restoreHistory = (text) => {
       userInput.value = text;
-      settingsSidebar.classList.remove('open');
-      overlay.classList.remove('show');
+      closeAllSidebars();
     };
 
-    // 事件绑定
+    function closeAllSidebars() {
+      historySidebar.classList.remove('open');
+      settingsSidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    }
+
     userInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
     });
@@ -727,19 +838,32 @@
       userInput.style.height = 'auto';
       userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
     });
+
     sendBtn.addEventListener('click', handleSend);
+    stopBtn.addEventListener('click', stopGeneration);
+
+    historyToggleBtn.addEventListener('click', () => {
+      settingsSidebar.classList.remove('open');
+      historySidebar.classList.add('open');
+      overlay.classList.add('show');
+    });
+    closeHistoryBtn.addEventListener('click', closeAllSidebars);
     openSettingsBtn.addEventListener('click', () => {
-      settingsSidebar.classList.add('open'); overlay.classList.add('show');
+      historySidebar.classList.remove('open');
+      settingsSidebar.classList.add('open');
+      overlay.classList.add('show');
     });
-    closeSettingsBtn.addEventListener('click', () => {
-      settingsSidebar.classList.remove('open'); overlay.classList.remove('show');
-    });
-    overlay.addEventListener('click', () => {
-      settingsSidebar.classList.remove('open'); overlay.classList.remove('show');
-    });
+    closeSettingsBtn.addEventListener('click', closeAllSidebars);
+    overlay.addEventListener('click', closeAllSidebars);
+    
     yastDevBtn.addEventListener('click', () => {
       window.open('https://space.bilibili.com/3546774769765189', '_blank');
     });
+
+    clearConversationBtn.addEventListener('click', clearConversation);
+    exportConversationBtn.addEventListener('click', exportConversation);
+    clearAllHistoryBtn.addEventListener('click', clearHistoryList);
+    exportHistoryBtn.addEventListener('click', exportHistoryList);
 
     updateTokenDisplay();
   })();
