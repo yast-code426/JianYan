@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>简言· 简约AI</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e1e2a'/%3E%3Cstop offset='100%25' stop-color='%233a5a8c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='50' y='72' font-family='Arial' font-size='72' font-weight='700' fill='url(%23g)' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #f5f7fb;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1e1e2a;
+      line-height: 1.5;
+    }
+    .app {
+      width: 100vw;
+      height: 100vh;
+      max-width: none;
+      max-height: none;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      position: relative;
+    }
+    .settings-sidebar {
+      position: absolute;
+      top: 0; right: -380px;
+      width: 360px; height: 100%;
+      background: #ffffff;
+      box-shadow: -8px 0 30px rgba(0,0,0,0.08);
+      transition: right 0.25s ease;
+      z-index: 50;
+      border-left: 1px solid #eef2f6;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+      overflow-y: auto;
+    }
+    .settings-sidebar.open { right: 0; }
+    .settings-header {
+      padding: 8px 20px 20px 20px;
+      border-bottom: 1px solid #eef2f6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .settings-header h3 { font-weight: 600; font-size: 18px; color: #1e293b; }
+    .close-settings {
+      background: none; border: none; font-size: 20px; cursor: pointer;
+      color: #68748e; padding: 6px; border-radius: 40px;
+    }
+    .close-settings:hover { background: #f0f4f9; }
+    .settings-section { padding: 20px; border-bottom: 1px solid #f0f4f9; }
+    .settings-section h4 {
+      font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;
+      color: #5e718d; margin-bottom: 16px;
+    }
+    .token-card {
+      background: linear-gradient(135deg, #eef6ff, #ffffff);
+      border-radius: 20px; padding: 18px; border: 1px solid #d9e6ff;
+    }
+    .token-amount { font-size: 28px; font-weight: 700; color: #0b2b4a; margin-bottom: 4px; }
+    .token-label { color: #3d5775; font-size: 13px; }
+    .ad-card {
+      margin-top: 16px;
+      background: #fef9e7;
+      border-radius: 16px;
+      padding: 14px;
+      border: 1px solid #fde68a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .ad-text { font-size: 13px; font-weight: 500; color: #92400e; }
+    .ad-btn {
+      background: #1a1f2e; color: white; text-decoration: none;
+      padding: 8px 16px; border-radius: 40px; font-size: 13px; font-weight: 500;
+      transition: 0.2s; display: inline-flex; align-items: center; gap: 6px;
+      border: none; cursor: pointer;
+    }
+    .ad-btn:hover { background: #2d3448; }
+    .history-list { max-height: 240px; overflow-y: auto; }
+    .history-item {
+      padding: 12px 0; border-bottom: 1px solid #f0f4f9; font-size: 14px;
+      cursor: pointer; color: #334155; display: flex; align-items: center; gap: 8px;
+    }
+    .history-item i { color: #7c8ea8; font-size: 13px; width: 16px; }
+    .history-item:hover { background: #fafcff; }
+    .about-link {
+      display: flex; align-items: center; gap: 12px; padding: 12px 0;
+      color: #1e293b; text-decoration: none; border-radius: 16px; transition: 0.1s;
+    }
+    .about-link i { font-size: 20px; color: #00a1d6; width: 24px; }
+    .about-link:hover { background: #f5f9ff; padding-left: 8px; }
+    .setting-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0;
+    }
+    .setting-row label { font-size: 14px; color: #334155; }
+    select.setting-select {
+      padding: 6px 12px; border-radius: 20px; border: 1px solid #e2e8f0;
+      background: #f8fafd; font-size: 13px; outline: none;
+    }
+    .app-header {
+      padding: 12px 24px; border-bottom: 1px solid #f0f2f5;
+      display: flex; align-items: center; justify-content: space-between; background: #ffffff;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand h1 {
+      font-weight: 600; font-size: 24px;
+      background: linear-gradient(135deg, #1e1e2a 0%, #3a5a8c 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .yast-btn {
+      background: #f2f6fc; border: none; padding: 6px 14px; border-radius: 40px;
+      font-size: 13px; font-weight: 500; color: #1e3a5f; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; transition: 0.15s; border: 1px solid #dee9f2;
+    }
+    .yast-btn i { color: #fb7299; }
+    .yast-btn:hover { background: #e2ebf6; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .settings-icon-btn {
+      background: #f8fafd; border: 1px solid #e2e8f0; border-radius: 40px;
+      padding: 8px 16px; font-size: 14px; color: #2c3e5c; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; transition: 0.15s;
+    }
+    .settings-icon-btn:hover { background: #ffffff; border-color: #a0b3d9; }
+    .chat-wrapper {
+      flex: 1; overflow-y: auto; padding: 20px 24px 8px 24px;
+      display: flex; flex-direction: column; background: #ffffff;
+    }
+    .messages-container { display: flex; flex-direction: column; gap: 18px; }
+    .message { display: flex; flex-direction: column; max-width: 85%; animation: fadeIn 0.2s ease; }
+    .message.user { align-self: flex-end; }
+    .message.assistant { align-self: flex-start; }
+    .bubble {
+      padding: 14px 18px; border-radius: 24px; font-size: 15px;
+      line-height: 1.55; word-break: break-word; box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+    .user .bubble {
+      background: #1a1f2e; color: #f0f3fa; border-bottom-right-radius: 6px;
+    }
+    .assistant .bubble {
+      background: #f4f6fa; color: #1e1e2a; border-bottom-left-radius: 6px;
+      border: 1px solid #edf0f5;
+    }
+    .bubble pre {
+      background: #1e1e2e; color: #e2e8f0; padding: 12px;
+      border-radius: 16px; overflow-x: auto; font-size: 13px;
+      margin: 8px 0;
+      position: relative;
+    }
+    .code-block-header {
+      display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 4px;
+    }
+    .code-btn {
+      background: rgba(255,255,255,0.1); border: none; color: #9aa6b9;
+      padding: 4px 8px; border-radius: 12px; font-size: 12px; cursor: pointer;
+      transition: 0.15s;
+    }
+    .code-btn:hover { background: rgba(255,255,255,0.2); color: #e2e8f0; }
+    .bubble table {
+      border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px;
+    }
+    .bubble th, .bubble td {
+      border: 1px solid #d0d9e8; padding: 8px; text-align: left;
+    }
+    .bubble th { background: #e6edf6; }
+    .file-attachment {
+      margin-top: 8px; background: #eef3fa; border-radius: 18px; padding: 8px 14px;
+      font-size: 13px; display: inline-flex; align-items: center; gap: 10px;
+    }
+    .input-area {
+      padding: 16px 24px 24px 24px; background: #ffffff;
+      border-top: 1px solid #f0f3f7;
+    }
+    .toolbar-row {
+      display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .tool-btn {
+      background: #f8fafd; border: 1px solid #e2e8f0; border-radius: 30px;
+      padding: 6px 16px; font-size: 13px; color: #2c3e5c; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; transition: 0.15s;
+    }
+    .tool-btn.active {
+      background: #1a1f2e; color: white; border-color: #1a1f2e;
+    }
+    .tool-btn i { font-size: 13px; }
+    .input-wrapper {
+      display: flex; align-items: flex-end; gap: 12px;
+    }
+    .textarea-wrapper {
+      flex: 1; background: #fafcff; border: 1.5px solid #e6edf6;
+      border-radius: 30px; display: flex; align-items: flex-end;
+      padding: 6px 8px 6px 20px; transition: border 0.15s;
+    }
+    .textarea-wrapper:focus-within { border-color: #a0bbdf; background: #ffffff; }
+    .textarea-wrapper textarea {
+      flex: 1; border: none; background: transparent; resize: none;
+      font-family: 'Inter', sans-serif; font-size: 15px; padding: 10px 0;
+      max-height: 120px; outline: none;
+    }
+    .upload-label { cursor: pointer; padding: 8px; color: #54657e; font-size: 20px; }
+    .upload-label:hover { color: #1e293b; }
+    .send-btn {
+      background: #1a1f2e; border: none; width: 48px; height: 48px;
+      border-radius: 48px; color: white; font-size: 20px; cursor: pointer;
+      transition: 0.15s; border: 1px solid #2d3445;
+    }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.2); z-index: 40; display: none;
+    }
+    .overlay.show { display: block; }
+    @keyframes fadeIn { from { opacity: 0.6; } to { opacity: 1; } }
+    .typing-indicator { display: flex; gap: 6px; padding: 8px; }
+    .dot {
+      width: 8px; height: 8px; background: #9aa6b9; border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+    .preview-modal {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); z-index: 100; display: none;
+      align-items: center; justify-content: center;
+    }
+    .preview-modal.show { display: flex; }
+    .preview-content {
+      background: white; border-radius: 24px; max-width: 800px; max-height: 80vh;
+      width: 90%; overflow: auto; padding: 24px; position: relative;
+    }
+    .preview-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .preview-close {
+      background: none; border: none; font-size: 24px; cursor: pointer;
+    }
+    .preview-body { overflow: auto; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="overlay" id="overlay"></div>
+
+  <div class="settings-sidebar" id="settingsSidebar">
+    <div class="settings-header">
+      <h3><i class="fa-solid fa-gear" style="margin-right: 8px;"></i>设置</h3>
+      <button class="close-settings" id="closeSettingsBtn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="settings-section">
+      <h4> 剩余Token</h4>
+      <div class="token-card">
+        <div class="token-amount" id="tokenDisplay">15,000,000</div>
+        <div class="token-label">可用额度 · 无需注册</div>
+        <div id="adContainer"></div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h4> 偏好设置</h4>
+      <div class="setting-row">
+        <label>字体大小</label>
+        <select id="fontSizeSelect" class="setting-select">
+          <option value="14px">小</option>
+          <option value="16px" selected>中</option>
+          <option value="18px">大</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label>代码主题</label>
+        <select id="codeThemeSelect" class="setting-select">
+          <option value="dark" selected>深色</option>
+          <option value="light">浅色</option>
+        </select>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h4> 历史记录</h4>
+      <div class="history-list" id="historyList">
+        <div class="history-item" onclick="restoreHistory('你好，介绍一下简言')"><i class="fa-regular fa-message"></i> 你好，介绍一下简言</div>
+        <div class="history-item" onclick="restoreHistory('用Python写一个快速排序')"><i class="fa-regular fa-message"></i> 用Python写一个快速排序</div>
+        <div class="history-item" onclick="restoreHistory('生成一个员工表(姓名,年龄,部门)')"><i class="fa-regular fa-message"></i> 生成一个员工表</div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h4> 关于</h4>
+      <a class="about-link" href="https://space.bilibili.com/3546774769765189" target="_blank">
+        <i class="fa-brands fa-bilibili"></i>
+        <span><strong>yast喵~ 开发</strong><br><span style="font-size:12px; color:#68748e;">B站空间 · 点击访问</span></span>
+      </a>
+      <div style="margin-top: 16px; color:#68748e; font-size:13px;">
+        简言· 极简风格<br>API: api.gemapi.ai
+      </div>
+    </div>
+  </div>
+
+  <div class="preview-modal" id="previewModal">
+    <div class="preview-content">
+      <div class="preview-header">
+        <h3>内容预览</h3>
+        <button class="preview-close" onclick="closePreview()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="preview-body" id="previewBody"></div>
+    </div>
+  </div>
+
+  <header class="app-header">
+    <div class="brand">
+      <h1>简言</h1>
+    </div>
+    <div class="header-actions">
+      <button class="yast-btn" id="yastDevBtn"><i class="fa-brands fa-bilibili"></i> yast喵~ 开发</button>
+      <button class="settings-icon-btn" id="openSettingsBtn"><i class="fa-solid fa-gear"></i> 设置</button>
+    </div>
+  </header>
+
+  <div class="chat-wrapper" id="chatWrapper">
+    <div class="messages-container" id="messagesContainer">
+      <div class="message assistant">
+        <div class="bubble">
+          你好，我是 <strong>简言</strong>，由 B站 yast喵~ 开发。<br>
+          支持联网搜索、深度求索，可上传多种文件。<br>
+          点击右上角「设置」查看更多功能。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="toolbar-row">
+      <button class="tool-btn" id="webSearchBtn"><i class="fa-solid fa-globe"></i> 联网搜索</button>
+      <button class="tool-btn" id="deepSearchBtn"><i class="fa-solid fa-magnifying-glass"></i> 深度求索</button>
+    </div>
+    <div class="input-wrapper">
+      <div class="textarea-wrapper">
+        <textarea id="userInput" placeholder="输入消息… (Enter发送，Shift+Enter换行)" rows="1"></textarea>
+        <input type="file" id="fileInput" style="display: none;" accept=".txt,.pdf,.docx,.md,.csv,.json,.xml,.html,.js,.py,.java,.cpp,.c,.h,.png,.jpg,.jpeg,.gif,.webp">
+        <label for="fileInput" class="upload-label" title="上传文件"><i class="fa-solid fa-paperclip"></i></label>
+      </div>
+      <button class="send-btn" id="sendBtn"><i class="fa-solid fa-arrow-up"></i></button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    "use strict";
+
+    const API_KEY = 'sk-HH8qKvugcKzbIYdD9jpiTrl6L1LYafABTJfWjH6VpvzMO3hW';
+    const API_BASE = 'https://api.gemapi.ai';
+    const MODEL_OPTIONS = ['[满血A]gemini-3-pro-preview-thinking-512', 'gemini-3-pro-preview-thinking-512', 'gemini-3-pro', 'gemini-pro'];
+    let currentModelIndex = 0;
+    
+    let conversationMessages = [];
+    let isLoading = false;
+    let currentController = null;
+    let tokenBalance = 15000000;
+    let adClicked = false;
+    let webSearchEnabled = false;
+    let deepSearchEnabled = false;
+
+    const messagesContainer = document.getElementById('messagesContainer');
+    const chatWrapper = document.getElementById('chatWrapper');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const fileInput = document.getElementById('fileInput');
+    const settingsSidebar = document.getElementById('settingsSidebar');
+    const overlay = document.getElementById('overlay');
+    const openSettingsBtn = document.getElementById('openSettingsBtn');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    const yastDevBtn = document.getElementById('yastDevBtn');
+    const tokenDisplay = document.getElementById('tokenDisplay');
+    const adContainer = document.getElementById('adContainer');
+    const webSearchBtn = document.getElementById('webSearchBtn');
+    const deepSearchBtn = document.getElementById('deepSearchBtn');
+    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    const codeThemeSelect = document.getElementById('codeThemeSelect');
+    const previewModal = document.getElementById('previewModal');
+    const previewBody = document.getElementById('previewBody');
+
+    function renderAd() {
+      if (adClicked) {
+        adContainer.innerHTML = '';
+        return;
+      }
+      adContainer.innerHTML = `
+        <div class="ad-card">
+          <span class="ad-text"><i class="fa-solid fa-gift" style="margin-right:6px;"></i>新人免费领500万token</span>
+          <button class="ad-btn" id="claimAdBtn"><i class="fa-solid fa-arrow-right"></i> 立即领取</button>
+        </div>
+      `;
+      document.getElementById('claimAdBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        window.open('https://api.gemai.cc/register?aff=fvs5', '_blank');
+        adClicked = true;
+        tokenBalance += 5000000;
+        updateTokenDisplay();
+        renderAd();
+      });
+    }
+    renderAd();
+
+    function updateTokenDisplay() {
+      tokenDisplay.textContent = tokenBalance.toLocaleString();
+    }
+
+    webSearchBtn.addEventListener('click', () => {
+      webSearchEnabled = !webSearchEnabled;
+      webSearchBtn.classList.toggle('active', webSearchEnabled);
+    });
+    deepSearchBtn.addEventListener('click', () => {
+      deepSearchEnabled = !deepSearchEnabled;
+      deepSearchBtn.classList.toggle('active', deepSearchEnabled);
+    });
+
+    fontSizeSelect.addEventListener('change', (e) => {
+      document.querySelectorAll('.bubble').forEach(el => el.style.fontSize = e.target.value);
+    });
+    codeThemeSelect.addEventListener('change', (e) => {
+      const theme = e.target.value;
+      document.querySelectorAll('.bubble pre').forEach(pre => {
+        pre.style.background = theme === 'dark' ? '#1e1e2e' : '#f5f5f5';
+        pre.style.color = theme === 'dark' ? '#e2e8f0' : '#1e1e2a';
+      });
+    });
+
+    function scrollToBottom() {
+      setTimeout(() => chatWrapper.scrollTo({ top: chatWrapper.scrollHeight, behavior: 'smooth' }), 50);
+    }
+
+    function renderMarkdownWithFeatures(text) {
+      if (!text) return '';
+      let html = marked.parse(text, { breaks: true, gfm: true });
+      
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      tempDiv.querySelectorAll('pre').forEach((pre, index) => {
+        const code = pre.querySelector('code');
+        const codeText = code ? code.textContent : pre.textContent;
+        const lang = code && code.className ? code.className.replace('language-', '') : 'text';
+        
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'code-block-header';
+        headerDiv.innerHTML = `
+          <button class="code-btn copy-code" data-code="${encodeURIComponent(codeText)}"><i class="fa-regular fa-copy"></i> 复制</button>
+          <button class="code-btn preview-code" data-code="${encodeURIComponent(codeText)}" data-lang="${lang}"><i class="fa-regular fa-eye"></i> 预览</button>
+          <button class="code-btn download-code" data-code="${encodeURIComponent(codeText)}" data-lang="${lang}"><i class="fa-solid fa-download"></i> 下载</button>
+        `;
+        pre.parentNode.insertBefore(headerDiv, pre);
+        
+        const theme = codeThemeSelect.value;
+        pre.style.background = theme === 'dark' ? '#1e1e2e' : '#f5f5f5';
+        pre.style.color = theme === 'dark' ? '#e2e8f0' : '#1e1e2a';
+      });
+      
+      tempDiv.querySelectorAll('.copy-code').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const code = decodeURIComponent(btn.dataset.code);
+          navigator.clipboard?.writeText(code).then(() => {
+            alert('代码已复制');
+          }).catch(() => alert('复制失败'));
+        });
+      });
+      
+      tempDiv.querySelectorAll('.preview-code').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const code = decodeURIComponent(btn.dataset.code);
+          const lang = btn.dataset.lang;
+          showPreview(code, lang);
+        });
+      });
+      
+      tempDiv.querySelectorAll('.download-code').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const code = decodeURIComponent(btn.dataset.code);
+          const lang = btn.dataset.lang;
+          const blob = new Blob([code], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `code.${lang || 'txt'}`;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+      });
+      
+      tempDiv.querySelectorAll('table').forEach(table => {
+        const wrap = document.createElement('div');
+        wrap.style.position = 'relative';
+        table.parentNode.insertBefore(wrap, table);
+        wrap.appendChild(table);
+        const btnDiv = document.createElement('div');
+        btnDiv.style.marginTop = '5px';
+        btnDiv.innerHTML = `
+          <button class="code-btn preview-table"><i class="fa-regular fa-eye"></i> 预览表格</button>
+          <button class="code-btn download-table"><i class="fa-solid fa-download"></i> 下载CSV</button>
+        `;
+        wrap.appendChild(btnDiv);
+        btnDiv.querySelector('.preview-table').addEventListener('click', () => showTablePreview(table));
+        btnDiv.querySelector('.download-table').addEventListener('click', () => downloadTableAsCSV(table));
+      });
+      
+      return tempDiv.innerHTML;
+    }
+
+    function showPreview(content, type) {
+      previewBody.innerHTML = '';
+      if (type === 'html') {
+        const iframe = document.createElement('iframe');
+        iframe.style.width = '100%'; iframe.style.height = '400px'; iframe.style.border = 'none';
+        iframe.srcdoc = content;
+        previewBody.appendChild(iframe);
+      } else if (type === 'markdown' || type === 'md') {
+        previewBody.innerHTML = marked.parse(content);
+      } else if (['python', 'js', 'javascript', 'java', 'cpp', 'c', 'json'].includes(type)) {
+        previewBody.innerHTML = `<pre><code>${escapeHtml(content)}</code></pre>`;
+      } else {
+        previewBody.innerHTML = `<pre>${escapeHtml(content)}</pre>`;
+      }
+      previewModal.classList.add('show');
+    }
+
+    function showTablePreview(table) {
+      previewBody.innerHTML = '';
+      const cloneTable = table.cloneNode(true);
+      cloneTable.style.width = '100%';
+      previewBody.appendChild(cloneTable);
+      previewModal.classList.add('show');
+    }
+
+    function downloadTableAsCSV(table) {
+      const rows = table.querySelectorAll('tr');
+      let csv = [];
+      rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        const rowData = Array.from(cols).map(cell => `"${cell.textContent.trim().replace(/"/g, '""')}"`).join(',');
+        csv.push(rowData);
+      });
+      const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'table.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    window.closePreview = () => previewModal.classList.remove('show');
+
+    function appendMessage(role, content, attachment = null) {
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      
+      if (role === 'user') {
+        bubble.textContent = content;
+        div.appendChild(bubble);
+        if (attachment) {
+          const attEl = document.createElement('div');
+          attEl.className = 'file-attachment';
+          attEl.innerHTML = `<i class="fa-regular fa-file-lines"></i> ${attachment.name}`;
+          div.appendChild(attEl);
+        }
+      } else {
+        bubble.innerHTML = renderMarkdownWithFeatures(content);
+        div.appendChild(bubble);
+      }
+      messagesContainer.appendChild(div);
+      scrollToBottom();
+      return bubble;
+    }
+
+    function addTypingIndicator() {
+      const div = document.createElement('div');
+      div.className = 'message assistant';
+      div.id = 'typingIndicator';
+      div.innerHTML = '<div class="bubble"><div class="typing-indicator"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>';
+      messagesContainer.appendChild(div);
+      scrollToBottom();
+    }
+
+    function removeTypingIndicator() {
+      document.getElementById('typingIndicator')?.remove();
+    }
+
+    async function trySendWithModel(content) {
+      for (let i = currentModelIndex; i < MODEL_OPTIONS.length; i++) {
+        const model = MODEL_OPTIONS[i];
+        try {
+          const response = await fetch(`${API_BASE}/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+            body: JSON.stringify({
+              model, messages: conversationMessages, stream: true,
+              temperature: 0.7,
+              ...(webSearchEnabled && { web_search: true }),
+              ...(deepSearchEnabled && { deep_search: true })
+            }),
+            signal: currentController.signal
+          });
+          if (response.ok) { currentModelIndex = i; return response; }
+          const errText = await response.text();
+          if (response.status !== 403 || !errText.includes('无权访问模型')) throw new Error(`API ${response.status}: ${errText}`);
+        } catch (e) {
+          if (i === MODEL_OPTIONS.length - 1) throw e;
+        }
+      }
+      throw new Error('所有模型尝试均失败');
+    }
+
+    async function handleSend() {
+      const content = userInput.value.trim();
+      if (!content || isLoading) return;
+      if (currentController) currentController.abort();
+      
+      const file = fileInput.files[0];
+      let userContent = content;
+      if (file) userContent = `[文件: ${file.name}]\n${content}`;
+      
+      appendMessage('user', content, file);
+      conversationMessages.push({ role: 'user', content: userContent });
+      
+      userInput.value = ''; userInput.style.height = 'auto'; fileInput.value = '';
+      isLoading = true; sendBtn.disabled = true;
+      addTypingIndicator();
+      currentController = new AbortController();
+      
+      try {
+        const response = await trySendWithModel(content);
+        removeTypingIndicator();
+        
+        const assistantDiv = document.createElement('div');
+        assistantDiv.className = 'message assistant';
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble'; bubble.innerHTML = '';
+        assistantDiv.appendChild(bubble);
+        messagesContainer.appendChild(assistantDiv);
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let full = '', buffer = '';
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n'); buffer = lines.pop() || '';
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const json = JSON.parse(line.slice(6));
+                const delta = json.choices?.[0]?.delta?.content;
+                if (delta) { full += delta; bubble.innerHTML = renderMarkdownWithFeatures(full); scrollToBottom(); }
+              } catch(e) {}
+            }
+          }
+        }
+        if (full) conversationMessages.push({ role: 'assistant', content: full });
+        else bubble.innerHTML = '_(未返回内容)_';
+        tokenBalance = Math.max(0, tokenBalance - Math.floor(full.length / 2 + 50));
+        updateTokenDisplay();
+      } catch (e) {
+        removeTypingIndicator();
+        if (e.name !== 'AbortError') appendMessage('assistant', `请求失败: ${e.message}`);
+      } finally {
+        isLoading = false; sendBtn.disabled = false; currentController = null;
+      }
+    }
+
+    window.restoreHistory = (text) => {
+      userInput.value = text;
+      settingsSidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    };
+
+    userInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    });
+    userInput.addEventListener('input', () => {
+      userInput.style.height = 'auto';
+      userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+    });
+    sendBtn.addEventListener('click', handleSend);
+    openSettingsBtn.addEventListener('click', () => {
+      settingsSidebar.classList.add('open'); overlay.classList.add('show');
+    });
+    closeSettingsBtn.addEventListener('click', () => {
+      settingsSidebar.classList.remove('open'); overlay.classList.remove('show');
+    });
+    overlay.addEventListener('click', () => {
+      settingsSidebar.classList.remove('open'); overlay.classList.remove('show');
+    });
+    yastDevBtn.addEventListener('click', () => {
+      window.open('https://space.bilibili.com/3546774769765189', '_blank');
+    });
+
+    updateTokenDisplay();
+  })();
+</script>
+</body>
+</html>
