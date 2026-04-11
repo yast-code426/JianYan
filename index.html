@@ -20,6 +20,7 @@
       color: #1e1e2a;
       line-height: 1.5;
     }
+    /* 全屏应用容器 */
     .app {
       width: 100vw;
       height: 100vh;
@@ -34,6 +35,7 @@
       box-shadow: none;
       position: relative;
     }
+    /* 设置侧边栏 (全屏右侧抽屉) */
     .settings-sidebar {
       position: absolute;
       top: 0; right: -380px;
@@ -104,6 +106,7 @@
     }
     .about-link i { font-size: 20px; color: #00a1d6; width: 24px; }
     .about-link:hover { background: #f5f9ff; padding-left: 8px; }
+    /* 设置项行 */
     .setting-row {
       display: flex; align-items: center; justify-content: space-between;
       padding: 10px 0;
@@ -113,6 +116,7 @@
       padding: 6px 12px; border-radius: 20px; border: 1px solid #e2e8f0;
       background: #f8fafd; font-size: 13px; outline: none;
     }
+    /* 头部 */
     .app-header {
       padding: 12px 24px; border-bottom: 1px solid #f0f2f5;
       display: flex; align-items: center; justify-content: space-between; background: #ffffff;
@@ -137,6 +141,7 @@
       display: flex; align-items: center; gap: 6px; transition: 0.15s;
     }
     .settings-icon-btn:hover { background: #ffffff; border-color: #a0b3d9; }
+    /* 聊天区域 */
     .chat-wrapper {
       flex: 1; overflow-y: auto; padding: 20px 24px 8px 24px;
       display: flex; flex-direction: column; background: #ffffff;
@@ -237,6 +242,7 @@
       0%, 60%, 100% { transform: translateY(0); }
       30% { transform: translateY(-6px); }
     }
+    /* 预览模态框 */
     .preview-modal {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.5); z-index: 100; display: none;
@@ -261,6 +267,7 @@
 <div class="app">
   <div class="overlay" id="overlay"></div>
 
+  <!-- 设置侧边栏 -->
   <div class="settings-sidebar" id="settingsSidebar">
     <div class="settings-header">
       <h3><i class="fa-solid fa-gear" style="margin-right: 8px;"></i>设置</h3>
@@ -312,6 +319,7 @@
     </div>
   </div>
 
+  <!-- 预览模态框 -->
   <div class="preview-modal" id="previewModal">
     <div class="preview-content">
       <div class="preview-header">
@@ -322,6 +330,7 @@
     </div>
   </div>
 
+  <!-- 主界面 -->
   <header class="app-header">
     <div class="brand">
       <h1>简言</h1>
@@ -364,11 +373,13 @@
   (function(){
     "use strict";
 
+    // 配置
     const API_KEY = 'sk-HH8qKvugcKzbIYdD9jpiTrl6L1LYafABTJfWjH6VpvzMO3hW';
     const API_BASE = 'https://api.gemapi.ai';
     const MODEL_OPTIONS = ['[满血A]gemini-3-pro-preview-thinking-512', 'gemini-3-pro-preview-thinking-512', 'gemini-3-pro', 'gemini-pro'];
     let currentModelIndex = 0;
     
+    // 状态
     let conversationMessages = [];
     let isLoading = false;
     let currentController = null;
@@ -377,6 +388,7 @@
     let webSearchEnabled = false;
     let deepSearchEnabled = false;
 
+    // DOM
     const messagesContainer = document.getElementById('messagesContainer');
     const chatWrapper = document.getElementById('chatWrapper');
     const userInput = document.getElementById('userInput');
@@ -396,6 +408,7 @@
     const previewModal = document.getElementById('previewModal');
     const previewBody = document.getElementById('previewBody');
 
+    // 初始化广告
     function renderAd() {
       if (adClicked) {
         adContainer.innerHTML = '';
@@ -422,6 +435,7 @@
       tokenDisplay.textContent = tokenBalance.toLocaleString();
     }
 
+    // 工具按钮切换
     webSearchBtn.addEventListener('click', () => {
       webSearchEnabled = !webSearchEnabled;
       webSearchBtn.classList.toggle('active', webSearchEnabled);
@@ -431,6 +445,7 @@
       deepSearchBtn.classList.toggle('active', deepSearchEnabled);
     });
 
+    // 字体大小设置
     fontSizeSelect.addEventListener('change', (e) => {
       document.querySelectorAll('.bubble').forEach(el => el.style.fontSize = e.target.value);
     });
@@ -442,14 +457,17 @@
       });
     });
 
+    // 辅助函数
     function scrollToBottom() {
       setTimeout(() => chatWrapper.scrollTo({ top: chatWrapper.scrollHeight, behavior: 'smooth' }), 50);
     }
 
+    // 增强渲染：支持代码块复制/预览/下载，表格预览
     function renderMarkdownWithFeatures(text) {
       if (!text) return '';
       let html = marked.parse(text, { breaks: true, gfm: true });
       
+      // 处理代码块：添加操作按钮
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html;
       tempDiv.querySelectorAll('pre').forEach((pre, index) => {
@@ -466,11 +484,13 @@
         `;
         pre.parentNode.insertBefore(headerDiv, pre);
         
+        // 应用代码主题
         const theme = codeThemeSelect.value;
         pre.style.background = theme === 'dark' ? '#1e1e2e' : '#f5f5f5';
         pre.style.color = theme === 'dark' ? '#e2e8f0' : '#1e1e2a';
       });
       
+      // 绑定代码块按钮事件
       tempDiv.querySelectorAll('.copy-code').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -505,6 +525,7 @@
         });
       });
       
+      // 表格增加预览下载
       tempDiv.querySelectorAll('table').forEach(table => {
         const wrap = document.createElement('div');
         wrap.style.position = 'relative';
@@ -607,6 +628,7 @@
       document.getElementById('typingIndicator')?.remove();
     }
 
+    // API调用
     async function trySendWithModel(content) {
       for (let i = currentModelIndex; i < MODEL_OPTIONS.length; i++) {
         const model = MODEL_OPTIONS[i];
@@ -697,6 +719,7 @@
       overlay.classList.remove('show');
     };
 
+    // 事件绑定
     userInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
     });
