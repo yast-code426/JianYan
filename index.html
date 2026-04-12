@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https://api.gemapi.ai;">
   <title>简言· 简约AI</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e1e2a'/%3E%3Cstop offset='100%25' stop-color='%233a5a8c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='50' y='72' font-family='Arial' font-size='72' font-weight='700' fill='url(%23g)' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
@@ -178,6 +179,13 @@
       align-items: center; justify-content: center;
     }
     .history-toggle-btn:hover { background: #f0f4f9; }
+    .new-chat-btn {
+      background: transparent; border: 1px solid #dee9f2; font-size: 14px; cursor: pointer;
+      color: #1e3a5f; padding: 6px 12px; border-radius: 40px; display: flex;
+      align-items: center; gap: 6px; margin-left: 4px; background: #f8fafd;
+      transition: 0.15s;
+    }
+    .new-chat-btn:hover { background: #ffffff; border-color: #a0b3d9; }
     .yast-btn {
       background: #f2f6fc; border: none; padding: 6px 14px; border-radius: 40px;
       font-size: 13px; font-weight: 500; color: #1e3a5f; cursor: pointer;
@@ -461,6 +469,7 @@
     <div class="brand">
       <button class="history-toggle-btn" id="historyToggleBtn" title="历史记录"><i class="fa-solid fa-bars"></i></button>
       <h1>简言</h1>
+      <button class="new-chat-btn" id="newChatBtn"><i class="fa-regular fa-pen-to-square"></i> 新对话</button>
     </div>
     <div class="header-actions">
       <button class="yast-btn" id="yastDevBtn"><i class="fa-brands fa-bilibili"></i> yast喵~ 开发</button>
@@ -520,6 +529,93 @@
     let currentLanguage = 'zh';
     let isNewConversation = true;
 
+    const STORAGE_KEYS = {
+      TOKEN: 'jianyan_token',
+      AD_CLICKED: 'jianyan_ad_clicked',
+      HISTORY: 'jianyan_history',
+      SETTINGS: 'jianyan_settings',
+      SIGN_DATE: 'jianyan_sign_date'
+    };
+
+    function loadFromStorage() {
+      try {
+        const savedToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
+        if (savedToken) tokenBalance = parseInt(savedToken, 10);
+        
+        const savedAd = localStorage.getItem(STORAGE_KEYS.AD_CLICKED);
+        if (savedAd) adClicked = savedAd === 'true';
+        
+        const savedHistory = localStorage.getItem(STORAGE_KEYS.HISTORY);
+        if (savedHistory) {
+          const items = JSON.parse(savedHistory);
+          items.forEach(item => addHistoryItemToDom(item.title, item.message));
+        } else {
+          initDefaultHistory();
+        }
+        
+        const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+        if (savedSettings) {
+          const settings = JSON.parse(savedSettings);
+          document.getElementById('fontSizeSelect').value = settings.fontSize || '16px';
+          document.getElementById('codeThemeSelect').value = settings.codeTheme || 'dark';
+          document.getElementById('languageSelect').value = settings.language || 'zh';
+          document.getElementById('temperature').value = settings.temperature || 0.7;
+          document.getElementById('topP').value = settings.topP || 0.95;
+          document.getElementById('freqPenalty').value = settings.freqPenalty || 0;
+          document.getElementById('presPenalty').value = settings.presPenalty || 0;
+          document.getElementById('maxTokens').value = settings.maxTokens || 4096;
+          document.getElementById('seed').value = settings.seed || '';
+          document.getElementById('streamOutput').checked = settings.streamOutput !== false;
+          updateSliderDisplays();
+          applyLanguage(settings.language || 'zh');
+          updateCodeTheme();
+        }
+      } catch(e) { console.warn('读取存储失败', e); }
+    }
+
+    function saveSettings() {
+      const settings = {
+        fontSize: document.getElementById('fontSizeSelect').value,
+        codeTheme: document.getElementById('codeThemeSelect').value,
+        language: document.getElementById('languageSelect').value,
+        temperature: document.getElementById('temperature').value,
+        topP: document.getElementById('topP').value,
+        freqPenalty: document.getElementById('freqPenalty').value,
+        presPenalty: document.getElementById('presPenalty').value,
+        maxTokens: document.getElementById('maxTokens').value,
+        seed: document.getElementById('seed').value,
+        streamOutput: document.getElementById('streamOutput').checked
+      };
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    }
+
+    function saveTokenBalance() {
+      localStorage.setItem(STORAGE_KEYS.TOKEN, tokenBalance);
+    }
+
+    function saveAdClicked() {
+      localStorage.setItem(STORAGE_KEYS.AD_CLICKED, adClicked);
+    }
+
+    function saveHistoryList() {
+      const items = [];
+      document.querySelectorAll('#historyListContainer .history-item').forEach(el => {
+        const title = el.childNodes[2]?.textContent?.trim() || '';
+        const onclick = el.getAttribute('onclick') || '';
+        const match = onclick.match(/'([^']+)'/);
+        const message = match ? match[1] : '';
+        if (title && message) items.push({ title, message });
+      });
+      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(items));
+    }
+
+    function updateSliderDisplays() {
+      document.getElementById('tempValue').textContent = document.getElementById('temperature').value;
+      document.getElementById('topPValue').textContent = document.getElementById('topP').value;
+      document.getElementById('freqValue').textContent = document.getElementById('freqPenalty').value;
+      document.getElementById('presValue').textContent = document.getElementById('presPenalty').value;
+    }
+
     const i18n = {
       zh: {
         history: '历史记录', clearHistory: '清空历史', settings: '设置', balance: '余额',
@@ -558,14 +654,14 @@
       const codeThemeSelect = document.getElementById('codeThemeSelect');
       codeThemeSelect.options[0].text = i18n[lang].dark;
       codeThemeSelect.options[1].text = i18n[lang].light;
-      document.querySelectorAll('.copy-message-btn span').forEach(span => {
-        if (span.getAttribute('data-i18n') === 'copy') span.textContent = i18n[lang].copy;
-      });
       updateSigninStatus();
     }
 
     const languageSelect = document.getElementById('languageSelect');
-    languageSelect.addEventListener('change', (e) => applyLanguage(e.target.value));
+    languageSelect.addEventListener('change', (e) => {
+      applyLanguage(e.target.value);
+      saveSettings();
+    });
 
     const messagesContainer = document.getElementById('messagesContainer');
     const chatWrapper = document.getElementById('chatWrapper');
@@ -594,6 +690,7 @@
     const historyListContainer = document.getElementById('historyListContainer');
     const signinBtn = document.getElementById('signinBtn');
     const signinStatus = document.getElementById('signinStatus');
+    const newChatBtn = document.getElementById('newChatBtn');
     const hljsDark = document.getElementById('hljs-dark');
     const hljsLight = document.getElementById('hljs-light');
 
@@ -609,10 +706,18 @@
     const seedInput = document.getElementById('seed');
     const streamCheck = document.getElementById('streamOutput');
 
-    tempSlider.addEventListener('input', () => tempVal.textContent = tempSlider.value);
-    topPSlider.addEventListener('input', () => topPVal.textContent = topPSlider.value);
-    freqSlider.addEventListener('input', () => freqVal.textContent = freqSlider.value);
-    presSlider.addEventListener('input', () => presVal.textContent = presSlider.value);
+    tempSlider.addEventListener('input', () => { tempVal.textContent = tempSlider.value; saveSettings(); });
+    topPSlider.addEventListener('input', () => { topPVal.textContent = topPSlider.value; saveSettings(); });
+    freqSlider.addEventListener('input', () => { freqVal.textContent = freqSlider.value; saveSettings(); });
+    presSlider.addEventListener('input', () => { presVal.textContent = presSlider.value; saveSettings(); });
+    maxTokensInput.addEventListener('change', saveSettings);
+    seedInput.addEventListener('change', saveSettings);
+    streamCheck.addEventListener('change', saveSettings);
+    fontSizeSelect.addEventListener('change', (e) => {
+      document.querySelectorAll('.bubble').forEach(el => el.style.fontSize = e.target.value);
+      saveSettings();
+    });
+    codeThemeSelect.addEventListener('change', () => { updateCodeTheme(); saveSettings(); });
 
     marked.setOptions({ breaks: true, gfm: true });
 
@@ -626,16 +731,15 @@
         hljsLight.disabled = false;
       }
     }
-    codeThemeSelect.addEventListener('change', updateCodeTheme);
-    updateCodeTheme();
 
     function updateTokenDisplay() {
       const balanceInYuan = (tokenBalance / 10000).toFixed(2);
       tokenDisplay.textContent = '¥' + parseFloat(balanceInYuan).toLocaleString();
+      saveTokenBalance();
     }
 
     function updateSigninStatus() {
-      const lastSign = localStorage.getItem('lastSignDate');
+      const lastSign = localStorage.getItem(STORAGE_KEYS.SIGN_DATE);
       const today = new Date().toDateString();
       if (lastSign === today) {
         signinBtn.disabled = true;
@@ -645,16 +749,15 @@
         signinStatus.textContent = '';
       }
     }
-    updateSigninStatus();
 
     signinBtn.addEventListener('click', () => {
-      const lastSign = localStorage.getItem('lastSignDate');
+      const lastSign = localStorage.getItem(STORAGE_KEYS.SIGN_DATE);
       const today = new Date().toDateString();
       if (lastSign === today) return;
       const reward = Math.floor(Math.random() * 91) + 10;
       tokenBalance += reward * 10000;
       updateTokenDisplay();
-      localStorage.setItem('lastSignDate', today);
+      localStorage.setItem(STORAGE_KEYS.SIGN_DATE, today);
       signinBtn.disabled = true;
       signinStatus.textContent = i18n[currentLanguage].signSuccess + reward;
       setTimeout(() => signinStatus.textContent = i18n[currentLanguage].signedToday, 2000);
@@ -674,10 +777,10 @@
         adClicked = true;
         tokenBalance += 5000000;
         updateTokenDisplay();
+        saveAdClicked();
         renderAd();
       });
     }
-    renderAd();
 
     webSearchBtn.addEventListener('click', () => {
       webSearchEnabled = !webSearchEnabled;
@@ -686,9 +789,6 @@
     deepSearchBtn.addEventListener('click', () => {
       deepSearchEnabled = !deepSearchEnabled;
       deepSearchBtn.classList.toggle('active', deepSearchEnabled);
-    });
-    fontSizeSelect.addEventListener('change', (e) => {
-      document.querySelectorAll('.bubble').forEach(el => el.style.fontSize = e.target.value);
     });
 
     function scrollToBottom() {
@@ -759,7 +859,7 @@
 
     window.closePreview = () => previewModal.classList.remove('show');
 
-    function addHistoryItem(title, userMessage) {
+    function addHistoryItemToDom(title, userMessage) {
       const div = document.createElement('div');
       div.className = 'history-item';
       div.setAttribute('onclick', `restoreHistory('${userMessage.replace(/'/g, "\\'")}')`);
@@ -767,10 +867,16 @@
       historyListContainer.prepend(div);
     }
 
-    function generateConversationTitle(userMessage, aiResponse) {
-      const combined = (userMessage + ' ' + aiResponse).substring(0, 100);
-      const words = combined.split(/\s+/).slice(0, 5);
-      return words.join(' ') + (words.length >= 5 ? '...' : '');
+    function addHistoryItem(title, userMessage) {
+      addHistoryItemToDom(title, userMessage);
+      saveHistoryList();
+    }
+
+    function initDefaultHistory() {
+      addHistoryItemToDom('你好，介绍一下简言', '你好，介绍一下简言');
+      addHistoryItemToDom('用Python写一个快速排序', '用Python写一个快速排序');
+      addHistoryItemToDom('生成一个员工表(姓名,年龄,部门)', '生成一个员工表(姓名,年龄,部门)');
+      saveHistoryList();
     }
 
     async function generateTitleWithAI(userMessage, aiResponse) {
@@ -788,7 +894,7 @@
         const data = await res.json();
         return data.choices[0].message.content.trim();
       } catch (e) {
-        return generateConversationTitle(userMessage, aiResponse);
+        return (userMessage + ' ' + aiResponse).substring(0, 20);
       }
     }
 
@@ -1014,9 +1120,16 @@
       isNewConversation = true;
     }
 
-    function clearHistoryList() { historyListContainer.innerHTML = ''; }
+    function clearHistoryList() { 
+      historyListContainer.innerHTML = ''; 
+      localStorage.removeItem(STORAGE_KEYS.HISTORY);
+      initDefaultHistory();
+    }
 
-    window.deleteHistoryItem = function(el) { el.closest('.history-item').remove(); };
+    window.deleteHistoryItem = function(el) { 
+      el.closest('.history-item').remove(); 
+      saveHistoryList();
+    };
     window.restoreHistory = (text) => { userInput.value = text; closeAllSidebars(); };
 
     function closeAllSidebars() {
@@ -1042,6 +1155,7 @@
 
     sendBtn.addEventListener('click', handleSend);
     stopBtn.addEventListener('click', stopGeneration);
+    newChatBtn.addEventListener('click', resetChat);
     historyToggleBtn.addEventListener('click', () => {
       settingsSidebar.classList.remove('open');
       historySidebar.classList.add('open');
@@ -1059,17 +1173,12 @@
     resetChatBtn.addEventListener('click', resetChat);
     clearAllHistoryBtn.addEventListener('click', clearHistoryList);
 
-    function initWelcomeHistory() {
-      const items = historyListContainer.children;
-      if (items.length === 0) {
-        addHistoryItem('你好，介绍一下简言', '你好，介绍一下简言');
-        addHistoryItem('用Python写一个快速排序', '用Python写一个快速排序');
-        addHistoryItem('生成一个员工表(姓名,年龄,部门)', '生成一个员工表(姓名,年龄,部门)');
-      }
-    }
-    initWelcomeHistory();
+    loadFromStorage();
+    renderAd();
     updateTokenDisplay();
-    applyLanguage('zh');
+    updateSigninStatus();
+    applyLanguage(document.getElementById('languageSelect').value);
+    fontSizeSelect.dispatchEvent(new Event('change'));
   })();
 </script>
 </body>
