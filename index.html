@@ -368,7 +368,7 @@
     <div class="settings-section">
       <h4><span data-i18n="balance">余额</span></h4>
       <div class="token-card">
-        <div class="token-amount" id="tokenDisplay">¥150.00</div>
+        <div class="token-amount" id="tokenDisplay">¥1500.00</div>
         <div class="token-label"><span data-i18n="availableCredit">可用额度 · 无需注册</span></div>
         <div class="signin-area">
           <button class="signin-btn" id="signinBtn"><i class="fa-regular fa-calendar-check"></i> <span data-i18n="signin">签到</span></button>
@@ -440,7 +440,7 @@
     <div class="settings-section">
       <h4><span data-i18n="conversation">对话管理</span></h4>
       <div>
-        <button class="action-btn" id="resetChatBtn"><i class="fa-regular fa-arrows-rotate"></i> <span data-i18n="resetChat">重置聊天数据</span></button>
+        <button class="action-btn" id="resetChatBtn"><i class="fa-solid fa-rotate-left"></i> <span data-i18n="resetChat">重置聊天数据</span></button>
       </div>
     </div>
     <div class="settings-section">
@@ -508,8 +508,37 @@
 </div>
 
 <script>
-  (function(){
+(function(){
     "use strict";
+
+    // 强力前端防护：禁用F12、右键、开发者工具快捷键
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+            (e.ctrlKey && e.key === 'U') ||
+            (e.ctrlKey && e.shiftKey && e.key === 'S')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    
+    // 检测开发者工具打开并采取措施（轻微防护）
+    let devtoolsOpen = false;
+    const threshold = 160;
+    const checkDevTools = () => {
+        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+        if (widthThreshold || heightThreshold) {
+            if (!devtoolsOpen) {
+                devtoolsOpen = true;
+                
+            }
+        } else {
+            devtoolsOpen = false;
+        }
+    };
+    setInterval(checkDevTools, 1000);
 
     const API_KEY = 'sk-HH8qKvugcKzbIYdD9jpiTrl6L1LYafABTJfWjH6VpvzMO3hW';
     const API_BASE = 'https://api.gemapi.ai';
@@ -522,7 +551,7 @@
     }];
     let isLoading = false;
     let currentController = null;
-    let tokenBalance = 1500000; 
+    let tokenBalance = 15000000; 
     let adClicked = false;
     let webSearchEnabled = false;
     let deepSearchEnabled = false;
@@ -910,7 +939,14 @@
         if (attachment) {
           const attEl = document.createElement('div');
           attEl.className = 'file-attachment';
-          attEl.innerHTML = `<i class="fa-regular fa-file-lines"></i> ${attachment.name}`;
+          const ext = attachment.name.split('.').pop().toLowerCase();
+          let icon = 'fa-file-lines';
+          if (['jpg','jpeg','png','gif','webp'].includes(ext)) icon = 'fa-file-image';
+          else if (['pdf'].includes(ext)) icon = 'fa-file-pdf';
+          else if (['doc','docx'].includes(ext)) icon = 'fa-file-word';
+          else if (['xls','xlsx','csv'].includes(ext)) icon = 'fa-file-excel';
+          else if (['txt','md'].includes(ext)) icon = 'fa-file-alt';
+          attEl.innerHTML = `<i class="fa-regular ${icon}"></i> ${attachment.name}`;
           div.appendChild(attEl);
         }
       } else {
@@ -1137,13 +1173,6 @@
       settingsSidebar.classList.remove('open');
       overlay.classList.remove('show');
     }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
-        e.preventDefault();
-        return false;
-      }
-    });
 
     userInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
