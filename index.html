@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https://api.gemapi.ai;">
-  <title>简言· 简约AI</title>
+  <title>简言· 让每一次对话，都成为灵感的起点</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e1e2a'/%3E%3Cstop offset='100%25' stop-color='%233a5a8c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='50' y='72' font-family='Arial' font-size='72' font-weight='700' fill='url(%23g)' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -372,7 +372,7 @@
       <h4><span data-i18n="balance">余额</span></h4>
       <div class="token-card">
         <div class="token-amount" id="tokenDisplay">¥1500.00</div>
-        <div class="token-label"><span data-i18n="availableCredit">可用额度 · 无需注册</span></div>
+        <div class="token-label"><span data-i18n="availableCredit">可用额度</span></div>
         <div class="signin-area">
           <button class="signin-btn" id="signinBtn"><i class="fa-regular fa-calendar-check"></i> <span data-i18n="signin">签到</span></button>
           <button class="qq-bind-btn" id="qqBindBtn"><i class="fa-brands fa-qq"></i> 绑定QQ</button>
@@ -452,10 +452,10 @@
       <h4><span data-i18n="about">关于</span></h4>
       <a class="about-link" href="https://space.bilibili.com/3546774769765189" target="_blank">
         <i class="fa-brands fa-bilibili"></i>
-        <span><strong>yast喵~ 开发</strong><br><span style="font-size:12px; color:#68748e;">B站空间 · 点击访问</span></span>
+        <span><strong>yast喵~ 开发</strong><br><span style="font-size:12px; color:#68748e;">B站空间</span></span>
       </a>
       <div style="margin-top: 16px; color:#68748e; font-size:13px;">
-        简言· 极简风格<br>API: api.gemapi.ai
+        简言· 极简风格<br>api.gemapi.ai
       </div>
     </div>
   </div>
@@ -477,7 +477,7 @@
       <button class="new-chat-btn" id="newChatBtn"><i class="fa-regular fa-pen-to-square"></i> 新对话</button>
     </div>
     <div class="header-actions">
-      <button class="yast-btn" id="yastDevBtn"><i class="fa-brands fa-bilibili"></i> yast喵~ 开发</button>
+      <button class="yast-btn" id="yastDevBtn"><i class="fa-brands fa-bilibili"></i> yast喵~ </button>
       <button class="settings-icon-btn" id="openSettingsBtn"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">设置</span></button>
     </div>
   </header>
@@ -486,7 +486,7 @@
     <div class="messages-container" id="messagesContainer">
       <div class="message assistant">
         <div class="bubble">
-          你好，我是 <strong>简言</strong>，由 B站 yast喵~ 开发。<br>
+          你好，我是 <strong>简言</strong>，由 B站 yast喵~(一水) 基于 Genmini开发。<br>
           支持联网搜索、深度求索，可上传多种文件。<br>
           点击右上角「设置」查看更多功能。
         </div>
@@ -872,7 +872,7 @@
       if (adClicked) { adContainer.innerHTML = ''; return; }
       adContainer.innerHTML = `
         <div class="ad-card">
-          <span class="ad-text"><i class="fa-solid fa-gift" style="margin-right:6px;"></i>新人免费领500万token</span>
+          <span class="ad-text"><i class="fa-solid fa-gift" style="margin-right:6px;"></i>新人免费领500余额</span>
           <button class="ad-btn" id="claimAdBtn"><i class="fa-solid fa-arrow-right"></i> 立即领取</button>
         </div>
       `;
@@ -1206,7 +1206,7 @@
       messagesContainer.innerHTML = '';
       const welcomeDiv = document.createElement('div');
       welcomeDiv.className = 'message assistant';
-      welcomeDiv.innerHTML = `<div class="bubble">你好，我是 <strong>简言</strong>，由 B站 yast喵~ 开发。<br>支持联网搜索、深度求索，可上传多种文件。<br>点击右上角「设置」查看更多功能。</div><div class="message-footer"><button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> <span data-i18n="copy">${i18n[currentLanguage].copy}</span></button></div>`;
+      welcomeDiv.innerHTML = `<div class="bubble">你好，我是 <strong>简言</strong>，由 B站 yast喵~(一水) 基于 Genmini 开发。<br>支持联网搜索、深度求索，可上传多种文件。<br>点击右上角「设置」查看更多功能。</div><div class="message-footer"><button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> <span data-i18n="copy">${i18n[currentLanguage].copy}</span></button></div>`;
       messagesContainer.appendChild(welcomeDiv);
       conversationMessages = [conversationMessages[0]];
       isNewConversation = true;
