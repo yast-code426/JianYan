@@ -54,8 +54,8 @@
     .history-sidebar.open { left: 0; }
     .settings-sidebar {
       position: absolute;
-      top: 0; right: -380px;
-      width: 360px; height: 100%;
+      top: 0; right: -420px;
+      width: 400px; height: 100%;
       background: #ffffff;
       box-shadow: -8px 0 30px rgba(0,0,0,0.08);
       transition: right 0.25s ease;
@@ -91,6 +91,18 @@
     }
     .token-amount { font-size: 28px; font-weight: 700; color: #0b2b4a; margin-bottom: 4px; }
     .token-label { color: #3d5775; font-size: 13px; }
+    .signin-area {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .signin-btn {
+      background: #1a1f2e; color: white; border: none;
+      padding: 8px 16px; border-radius: 40px; font-size: 13px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+    }
+    .signin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .ad-card {
       margin-top: 16px;
       background: #fef9e7;
@@ -113,12 +125,19 @@
     .history-item {
       padding: 12px 0; border-bottom: 1px solid #f0f4f9; font-size: 14px;
       cursor: pointer; color: #334155; display: flex; align-items: center; gap: 8px;
+      position: relative;
     }
     .history-item i { color: #7c8ea8; font-size: 13px; width: 16px; }
     .history-item:hover { background: #fafcff; }
-    .history-actions {
-      padding: 16px 20px; border-top: 1px solid #f0f4f9; margin-top: auto;
+    .history-item .delete-history {
+      margin-left: auto;
+      opacity: 0;
+      transition: opacity 0.15s;
+      color: #b91c1c;
+      cursor: pointer;
+      padding: 4px;
     }
+    .history-item:hover .delete-history { opacity: 1; }
     .action-btn {
       background: #f2f6fc; border: 1px solid #dee9f2; border-radius: 30px;
       padding: 8px 16px; font-size: 13px; color: #1e3a5f; cursor: pointer;
@@ -137,10 +156,12 @@
       padding: 10px 0;
     }
     .setting-row label { font-size: 14px; color: #334155; }
-    select.setting-select {
+    select.setting-select, input.setting-input {
       padding: 6px 12px; border-radius: 20px; border: 1px solid #e2e8f0;
-      background: #f8fafd; font-size: 13px; outline: none;
+      background: #f8fafd; font-size: 13px; outline: none; width: 120px;
     }
+    input[type="range"] { width: 150px; }
+    .param-value { font-size: 13px; color: #1e3a5f; min-width: 40px; text-align: right; }
     .app-header {
       padding: 12px 24px; border-bottom: 1px solid #f0f2f5;
       display: flex; align-items: center; justify-content: space-between; background: #ffffff;
@@ -190,6 +211,25 @@
       background: #f4f6fa; color: #1e1e2a; border-bottom-left-radius: 6px;
       border: 1px solid #edf0f5;
     }
+    .message-footer {
+      display: flex; justify-content: flex-end; margin-top: 4px; gap: 8px;
+    }
+    .copy-message-btn {
+      background: transparent; border: none; color: #7c8ea8; cursor: pointer;
+      font-size: 13px; padding: 2px 6px; border-radius: 12px;
+    }
+    .copy-message-btn:hover { background: #eef2f6; color: #1e293b; }
+    .think-block {
+      background: #eef2f6; color: #4a5a6e; padding: 12px 16px;
+      border-radius: 18px; margin-bottom: 12px; font-size: 14px;
+      border-left: 4px solid #a0bbdf;
+    }
+    .search-refs {
+      background: #f8fafd; border-radius: 18px; padding: 12px 16px;
+      margin-bottom: 12px; font-size: 13px; border: 1px solid #dee9f2;
+    }
+    .search-refs a { color: #1e3a5f; text-decoration: none; display: block; margin: 4px 0; }
+    .search-refs a:hover { text-decoration: underline; }
     .bubble pre {
       background: #1e1e2e; color: #e2e8f0; padding: 12px;
       border-radius: 16px; overflow-x: auto; font-size: 13px;
@@ -299,37 +339,40 @@
 
   <div class="history-sidebar" id="historySidebar">
     <div class="sidebar-header">
-      <h3><i class="fa-regular fa-clock" style="margin-right: 8px;"></i>历史记录</h3>
+      <h3><i class="fa-regular fa-clock" style="margin-right: 8px;"></i><span data-i18n="history">历史记录</span></h3>
       <button class="close-sidebar" id="closeHistoryBtn"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="history-list" id="historyListContainer">
-      <div class="history-item" onclick="restoreHistory('你好，介绍一下简言')"><i class="fa-regular fa-message"></i> 你好，介绍一下简言</div>
-      <div class="history-item" onclick="restoreHistory('用Python写一个快速排序')"><i class="fa-regular fa-message"></i> 用Python写一个快速排序</div>
-      <div class="history-item" onclick="restoreHistory('生成一个员工表(姓名,年龄,部门)')"><i class="fa-regular fa-message"></i> 生成一个员工表</div>
+      <div class="history-item" onclick="restoreHistory('你好，介绍一下简言')"><i class="fa-regular fa-message"></i> 你好，介绍一下简言<span class="delete-history" onclick="event.stopPropagation();deleteHistoryItem(this)"><i class="fa-regular fa-trash-can"></i></span></div>
+      <div class="history-item" onclick="restoreHistory('用Python写一个快速排序')"><i class="fa-regular fa-message"></i> 用Python写一个快速排序<span class="delete-history" onclick="event.stopPropagation();deleteHistoryItem(this)"><i class="fa-regular fa-trash-can"></i></span></div>
+      <div class="history-item" onclick="restoreHistory('生成一个员工表(姓名,年龄,部门)')"><i class="fa-regular fa-message"></i> 生成一个员工表<span class="delete-history" onclick="event.stopPropagation();deleteHistoryItem(this)"><i class="fa-regular fa-trash-can"></i></span></div>
     </div>
     <div class="history-actions">
-      <button class="action-btn" id="clearAllHistoryBtn"><i class="fa-regular fa-trash-can"></i> 清空历史</button>
-      <button class="action-btn" id="exportHistoryBtn"><i class="fa-regular fa-file-export"></i> 导出历史</button>
+      <button class="action-btn" id="clearAllHistoryBtn"><i class="fa-regular fa-trash-can"></i> <span data-i18n="clearHistory">清空历史</span></button>
     </div>
   </div>
 
   <div class="settings-sidebar" id="settingsSidebar">
     <div class="sidebar-header">
-      <h3><i class="fa-solid fa-gear" style="margin-right: 8px;"></i>设置</h3>
+      <h3><i class="fa-solid fa-gear" style="margin-right: 8px;"></i><span data-i18n="settings">设置</span></h3>
       <button class="close-sidebar" id="closeSettingsBtn"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="settings-section">
-      <h4> 剩余Token</h4>
+      <h4><span data-i18n="balance">余额</span></h4>
       <div class="token-card">
-        <div class="token-amount" id="tokenDisplay">15,000,000</div>
-        <div class="token-label">可用额度 · 无需注册</div>
+        <div class="token-amount" id="tokenDisplay">¥150.00</div>
+        <div class="token-label"><span data-i18n="availableCredit">可用额度 · 无需注册</span></div>
+        <div class="signin-area">
+          <button class="signin-btn" id="signinBtn"><i class="fa-regular fa-calendar-check"></i> <span data-i18n="signin">签到</span></button>
+          <span style="font-size:13px; color:#3d5775;" id="signinStatus"></span>
+        </div>
         <div id="adContainer"></div>
       </div>
     </div>
     <div class="settings-section">
-      <h4> 偏好设置</h4>
+      <h4><span data-i18n="preferences">偏好设置</span></h4>
       <div class="setting-row">
-        <label>字体大小</label>
+        <label><span data-i18n="fontSize">字体大小</span></label>
         <select id="fontSizeSelect" class="setting-select">
           <option value="14px">小</option>
           <option value="16px" selected>中</option>
@@ -337,22 +380,63 @@
         </select>
       </div>
       <div class="setting-row">
-        <label>代码主题</label>
+        <label><span data-i18n="codeTheme">代码主题</span></label>
         <select id="codeThemeSelect" class="setting-select">
           <option value="dark" selected>深色</option>
           <option value="light">浅色</option>
         </select>
       </div>
-    </div>
-    <div class="settings-section">
-      <h4> 对话管理</h4>
-      <div>
-        <button class="action-btn" id="clearConversationBtn"><i class="fa-regular fa-trash-can"></i> 清空对话</button>
-        <button class="action-btn" id="exportConversationBtn"><i class="fa-regular fa-file-export"></i> 导出对话</button>
+      <div class="setting-row">
+        <label><span data-i18n="language">语言</span></label>
+        <select id="languageSelect" class="setting-select">
+          <option value="zh" selected>中文</option>
+          <option value="en">English</option>
+        </select>
       </div>
     </div>
     <div class="settings-section">
-      <h4> 关于</h4>
+      <h4>高级参数</h4>
+      <div class="setting-row">
+        <label>Temperature</label>
+        <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7">
+        <span class="param-value" id="tempValue">0.7</span>
+      </div>
+      <div class="setting-row">
+        <label>Top P</label>
+        <input type="range" id="topP" min="0" max="1" step="0.05" value="0.95">
+        <span class="param-value" id="topPValue">0.95</span>
+      </div>
+      <div class="setting-row">
+        <label>Frequency Penalty</label>
+        <input type="range" id="freqPenalty" min="0" max="2" step="0.1" value="0">
+        <span class="param-value" id="freqValue">0</span>
+      </div>
+      <div class="setting-row">
+        <label>Presence Penalty</label>
+        <input type="range" id="presPenalty" min="0" max="2" step="0.1" value="0">
+        <span class="param-value" id="presValue">0</span>
+      </div>
+      <div class="setting-row">
+        <label>Max Tokens</label>
+        <input type="number" id="maxTokens" min="1" max="4096" value="4096" class="setting-input" style="width:80px;">
+      </div>
+      <div class="setting-row">
+        <label>Seed</label>
+        <input type="number" id="seed" placeholder="留空随机" class="setting-input" style="width:100px;">
+      </div>
+      <div class="setting-row">
+        <label>流式输出</label>
+        <input type="checkbox" id="streamOutput" checked>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h4><span data-i18n="conversation">对话管理</span></h4>
+      <div>
+        <button class="action-btn" id="resetChatBtn"><i class="fa-regular fa-arrows-rotate"></i> <span data-i18n="resetChat">重置聊天数据</span></button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h4><span data-i18n="about">关于</span></h4>
       <a class="about-link" href="https://space.bilibili.com/3546774769765189" target="_blank">
         <i class="fa-brands fa-bilibili"></i>
         <span><strong>yast喵~ 开发</strong><br><span style="font-size:12px; color:#68748e;">B站空间 · 点击访问</span></span>
@@ -380,7 +464,7 @@
     </div>
     <div class="header-actions">
       <button class="yast-btn" id="yastDevBtn"><i class="fa-brands fa-bilibili"></i> yast喵~ 开发</button>
-      <button class="settings-icon-btn" id="openSettingsBtn"><i class="fa-solid fa-gear"></i> 设置</button>
+      <button class="settings-icon-btn" id="openSettingsBtn"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">设置</span></button>
     </div>
   </header>
 
@@ -392,18 +476,19 @@
           支持联网搜索、深度求索，可上传多种文件。<br>
           点击右上角「设置」查看更多功能。
         </div>
+        <div class="message-footer"><button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> 复制</button></div>
       </div>
     </div>
   </div>
 
   <div class="input-area">
     <div class="toolbar-row">
-      <button class="tool-btn" id="webSearchBtn"><i class="fa-solid fa-globe"></i> 联网搜索</button>
-      <button class="tool-btn" id="deepSearchBtn"><i class="fa-solid fa-magnifying-glass"></i> 深度求索</button>
+      <button class="tool-btn" id="webSearchBtn"><i class="fa-solid fa-globe"></i> <span data-i18n="webSearch">联网搜索</span></button>
+      <button class="tool-btn" id="deepSearchBtn"><i class="fa-solid fa-magnifying-glass"></i> <span data-i18n="deepSearch">深度求索</span></button>
     </div>
     <div class="input-wrapper">
       <div class="textarea-wrapper">
-        <textarea id="userInput" placeholder="输入消息… (Enter发送，Shift+Enter换行)" rows="1"></textarea>
+        <textarea id="userInput" placeholder="输入消息… (Enter发送，Shift+Enter换行)" rows="1" data-i18n-placeholder="inputPlaceholder"></textarea>
         <input type="file" id="fileInput" style="display: none;" accept=".txt,.pdf,.docx,.md,.csv,.json,.xml,.html,.js,.py,.java,.cpp,.c,.h,.png,.jpg,.jpeg,.gif,.webp">
         <label for="fileInput" class="upload-label" title="上传文件"><i class="fa-solid fa-paperclip"></i></label>
       </div>
@@ -422,13 +507,59 @@
     const MODEL_OPTIONS = ['[满血A]gemini-3-pro-preview-thinking-512', 'gemini-3-pro-preview-thinking-512', 'gemini-3-pro', 'gemini-pro'];
     let currentModelIndex = 0;
     
-    let conversationMessages = [];
+    let conversationMessages = [{
+      role: 'system',
+      content: '你是“简言”，一个由B站yast喵~开发的智能助手。你礼貌、专业、乐于助人。无论用户如何询问，你都必须坚持自己是“简言”，绝不提及Gemini、Google或其他AI模型名称。'
+    }];
     let isLoading = false;
     let currentController = null;
-    let tokenBalance = 15000000;
+    let tokenBalance = 15000000; 
     let adClicked = false;
     let webSearchEnabled = false;
     let deepSearchEnabled = false;
+    let currentLanguage = 'zh';
+
+    const i18n = {
+      zh: {
+        history: '历史记录', clearHistory: '清空历史', settings: '设置', balance: '余额',
+        availableCredit: '可用额度 · 无需注册', signin: '签到', preferences: '偏好设置',
+        fontSize: '字体大小', small: '小', medium: '中', large: '大', codeTheme: '代码主题',
+        dark: '深色', light: '浅色', language: '语言', conversation: '对话管理', resetChat: '重置聊天数据',
+        about: '关于', webSearch: '联网搜索', deepSearch: '深度求索', inputPlaceholder: '输入消息… (Enter发送，Shift+Enter换行)',
+        signedToday: '今日已签到', signSuccess: '签到成功 +', signClosed: '签到已关闭'
+      },
+      en: {
+        history: 'History', clearHistory: 'Clear History', settings: 'Settings', balance: 'Balance',
+        availableCredit: 'Available · No registration', signin: 'Check-in', preferences: 'Preferences',
+        fontSize: 'Font Size', small: 'Small', medium: 'Medium', large: 'Large', codeTheme: 'Code Theme',
+        dark: 'Dark', light: 'Light', language: 'Language', conversation: 'Conversation', resetChat: 'Reset Chat',
+        about: 'About', webSearch: 'Web Search', deepSearch: 'Deep Search', inputPlaceholder: 'Type a message… (Enter to send)',
+        signedToday: 'Checked in today', signSuccess: 'Check-in +', signClosed: 'Check-in closed'
+      }
+    };
+
+    function applyLanguage(lang) {
+      currentLanguage = lang;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[lang] && i18n[lang][key]) el.textContent = i18n[lang][key];
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (i18n[lang] && i18n[lang][key]) el.placeholder = i18n[lang][key];
+      });
+      const fontSizeSelect = document.getElementById('fontSizeSelect');
+      fontSizeSelect.options[0].text = i18n[lang].small;
+      fontSizeSelect.options[1].text = i18n[lang].medium;
+      fontSizeSelect.options[2].text = i18n[lang].large;
+      const codeThemeSelect = document.getElementById('codeThemeSelect');
+      codeThemeSelect.options[0].text = i18n[lang].dark;
+      codeThemeSelect.options[1].text = i18n[lang].light;
+      updateSigninStatus();
+    }
+
+    const languageSelect = document.getElementById('languageSelect');
+    languageSelect.addEventListener('change', (e) => applyLanguage(e.target.value));
 
     const messagesContainer = document.getElementById('messagesContainer');
     const chatWrapper = document.getElementById('chatWrapper');
@@ -452,24 +583,32 @@
     const codeThemeSelect = document.getElementById('codeThemeSelect');
     const previewModal = document.getElementById('previewModal');
     const previewBody = document.getElementById('previewBody');
-    const clearConversationBtn = document.getElementById('clearConversationBtn');
-    const exportConversationBtn = document.getElementById('exportConversationBtn');
+    const resetChatBtn = document.getElementById('resetChatBtn');
     const clearAllHistoryBtn = document.getElementById('clearAllHistoryBtn');
-    const exportHistoryBtn = document.getElementById('exportHistoryBtn');
     const historyListContainer = document.getElementById('historyListContainer');
+    const signinBtn = document.getElementById('signinBtn');
+    const signinStatus = document.getElementById('signinStatus');
     const hljsDark = document.getElementById('hljs-dark');
     const hljsLight = document.getElementById('hljs-light');
 
-    marked.setOptions({
-      highlight: function(code, lang) {
-        if (lang && hljs.getLanguage(lang)) {
-          return hljs.highlight(code, { language: lang }).value;
-        }
-        return hljs.highlightAuto(code).value;
-      },
-      breaks: true,
-      gfm: true
-    });
+    const tempSlider = document.getElementById('temperature');
+    const tempVal = document.getElementById('tempValue');
+    const topPSlider = document.getElementById('topP');
+    const topPVal = document.getElementById('topPValue');
+    const freqSlider = document.getElementById('freqPenalty');
+    const freqVal = document.getElementById('freqValue');
+    const presSlider = document.getElementById('presPenalty');
+    const presVal = document.getElementById('presValue');
+    const maxTokensInput = document.getElementById('maxTokens');
+    const seedInput = document.getElementById('seed');
+    const streamCheck = document.getElementById('streamOutput');
+
+    tempSlider.addEventListener('input', () => tempVal.textContent = tempSlider.value);
+    topPSlider.addEventListener('input', () => topPVal.textContent = topPSlider.value);
+    freqSlider.addEventListener('input', () => freqVal.textContent = freqSlider.value);
+    presSlider.addEventListener('input', () => presVal.textContent = presSlider.value);
+
+    marked.setOptions({ breaks: true, gfm: true });
 
     function updateCodeTheme() {
       const theme = codeThemeSelect.value;
@@ -480,19 +619,43 @@
         hljsDark.disabled = true;
         hljsLight.disabled = false;
       }
-      document.querySelectorAll('.bubble pre').forEach(pre => {
-        pre.style.background = theme === 'dark' ? '#1e1e2e' : '#f5f5f5';
-        pre.style.color = theme === 'dark' ? '#e2e8f0' : '#1e1e2a';
-      });
     }
     codeThemeSelect.addEventListener('change', updateCodeTheme);
     updateCodeTheme();
 
-    function renderAd() {
-      if (adClicked) {
-        adContainer.innerHTML = '';
-        return;
+    function updateTokenDisplay() {
+      const balanceInYuan = (tokenBalance / 10000).toFixed(2);
+      tokenDisplay.textContent = '¥' + parseFloat(balanceInYuan).toLocaleString();
+    }
+
+    function updateSigninStatus() {
+      const lastSign = localStorage.getItem('lastSignDate');
+      const today = new Date().toDateString();
+      if (lastSign === today) {
+        signinBtn.disabled = true;
+        signinStatus.textContent = i18n[currentLanguage].signedToday;
+      } else {
+        signinBtn.disabled = false;
+        signinStatus.textContent = '';
       }
+    }
+    updateSigninStatus();
+
+    signinBtn.addEventListener('click', () => {
+      const lastSign = localStorage.getItem('lastSignDate');
+      const today = new Date().toDateString();
+      if (lastSign === today) return;
+      const reward = Math.floor(Math.random() * 91) + 10;
+      tokenBalance += reward * 10000;
+      updateTokenDisplay();
+      localStorage.setItem('lastSignDate', today);
+      signinBtn.disabled = true;
+      signinStatus.textContent = i18n[currentLanguage].signSuccess + reward;
+      setTimeout(() => signinStatus.textContent = i18n[currentLanguage].signedToday, 2000);
+    });
+
+    function renderAd() {
+      if (adClicked) { adContainer.innerHTML = ''; return; }
       adContainer.innerHTML = `
         <div class="ad-card">
           <span class="ad-text"><i class="fa-solid fa-gift" style="margin-right:6px;"></i>新人免费领500万token</span>
@@ -510,10 +673,6 @@
     }
     renderAd();
 
-    function updateTokenDisplay() {
-      tokenDisplay.textContent = tokenBalance.toLocaleString();
-    }
-
     webSearchBtn.addEventListener('click', () => {
       webSearchEnabled = !webSearchEnabled;
       webSearchBtn.classList.toggle('active', webSearchEnabled);
@@ -522,7 +681,6 @@
       deepSearchEnabled = !deepSearchEnabled;
       deepSearchBtn.classList.toggle('active', deepSearchEnabled);
     });
-
     fontSizeSelect.addEventListener('change', (e) => {
       document.querySelectorAll('.bubble').forEach(el => el.style.fontSize = e.target.value);
     });
@@ -533,6 +691,7 @@
 
     function attachCodeBlockFeatures(bubbleElement) {
       bubbleElement.querySelectorAll('pre').forEach((pre) => {
+        if (pre.parentNode.querySelector('.code-block-header')) return;
         const code = pre.querySelector('code');
         const codeText = code ? code.textContent : pre.textContent;
         const lang = code && code.className ? code.className.replace('language-', '') : 'text';
@@ -544,51 +703,32 @@
           <button class="code-btn download-code"><i class="fa-solid fa-download"></i> 下载</button>
         `;
         pre.parentNode.insertBefore(headerDiv, pre);
-        const copyBtn = headerDiv.querySelector('.copy-code');
-        const previewBtn = headerDiv.querySelector('.preview-code');
-        const downloadBtn = headerDiv.querySelector('.download-code');
-        copyBtn.addEventListener('click', (e) => {
+        headerDiv.querySelector('.copy-code').addEventListener('click', (e) => {
           e.stopPropagation();
           navigator.clipboard?.writeText(codeText).then(() => alert('代码已复制')).catch(() => alert('复制失败'));
         });
-        previewBtn.addEventListener('click', (e) => {
+        headerDiv.querySelector('.preview-code').addEventListener('click', (e) => {
           e.stopPropagation();
           showPreview(codeText, lang);
         });
-        downloadBtn.addEventListener('click', (e) => {
+        headerDiv.querySelector('.download-code').addEventListener('click', (e) => {
           e.stopPropagation();
           const blob = new Blob([codeText], { type: 'text/plain' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
-          a.href = url;
-          a.download = `code.${lang || 'txt'}`;
+          a.href = url; a.download = `code.${lang || 'txt'}`;
           a.click();
           URL.revokeObjectURL(url);
         });
-      });
-
-      bubbleElement.querySelectorAll('table').forEach(table => {
-        const wrap = document.createElement('div');
-        wrap.style.position = 'relative';
-        table.parentNode.insertBefore(wrap, table);
-        wrap.appendChild(table);
-        const btnDiv = document.createElement('div');
-        btnDiv.style.marginTop = '5px';
-        btnDiv.innerHTML = `
-          <button class="code-btn preview-table"><i class="fa-regular fa-eye"></i> 预览表格</button>
-          <button class="code-btn download-table"><i class="fa-solid fa-download"></i> 下载CSV</button>
-        `;
-        wrap.appendChild(btnDiv);
-        btnDiv.querySelector('.preview-table').addEventListener('click', () => showTablePreview(table));
-        btnDiv.querySelector('.download-table').addEventListener('click', () => downloadTableAsCSV(table));
       });
     }
 
     function renderMarkdownWithFeatures(text) {
       if (!text) return '';
-      const html = marked.parse(text);
+      let html = marked.parse(text);
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html;
+      tempDiv.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
       attachCodeBlockFeatures(tempDiv);
       return tempDiv.innerHTML;
     }
@@ -600,39 +740,11 @@
         iframe.style.width = '100%'; iframe.style.height = '400px'; iframe.style.border = 'none';
         iframe.srcdoc = content;
         previewBody.appendChild(iframe);
-      } else if (type === 'markdown' || type === 'md') {
-        previewBody.innerHTML = marked.parse(content);
-      } else if (['python', 'js', 'javascript', 'java', 'cpp', 'c', 'json'].includes(type)) {
-        previewBody.innerHTML = `<pre><code>${escapeHtml(content)}</code></pre>`;
-        previewBody.querySelector('pre code').textContent = content;
-        hljs.highlightElement(previewBody.querySelector('code'));
       } else {
-        previewBody.innerHTML = `<pre>${escapeHtml(content)}</pre>`;
+        previewBody.innerHTML = `<pre><code>${escapeHtml(content)}</code></pre>`;
+        hljs.highlightElement(previewBody.querySelector('code'));
       }
       previewModal.classList.add('show');
-    }
-
-    function showTablePreview(table) {
-      previewBody.innerHTML = '';
-      const cloneTable = table.cloneNode(true);
-      cloneTable.style.width = '100%';
-      previewBody.appendChild(cloneTable);
-      previewModal.classList.add('show');
-    }
-
-    function downloadTableAsCSV(table) {
-      const rows = table.querySelectorAll('tr');
-      let csv = [];
-      rows.forEach(row => {
-        const cols = row.querySelectorAll('th, td');
-        const rowData = Array.from(cols).map(cell => `"${cell.textContent.trim().replace(/"/g, '""')}"`).join(',');
-        csv.push(rowData);
-      });
-      const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'table.csv'; a.click();
-      URL.revokeObjectURL(url);
     }
 
     function escapeHtml(text) {
@@ -641,11 +753,12 @@
 
     window.closePreview = () => previewModal.classList.remove('show');
 
-    function appendMessage(role, content, attachment = null) {
+    function appendMessage(role, content, attachment = null, thinkContent = null, searchRefs = null) {
       const div = document.createElement('div');
       div.className = `message ${role}`;
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
+      
       if (role === 'user') {
         bubble.textContent = content;
         div.appendChild(bubble);
@@ -656,13 +769,44 @@
           div.appendChild(attEl);
         }
       } else {
-        bubble.innerHTML = renderMarkdownWithFeatures(content);
+        if (searchRefs && searchRefs.length) {
+          const refsDiv = document.createElement('div');
+          refsDiv.className = 'search-refs';
+          refsDiv.innerHTML = '<strong>搜索参考:</strong><br>' + searchRefs.map(ref => `<a href="${ref.url}" target="_blank">${ref.title}</a>`).join('');
+          bubble.appendChild(refsDiv);
+        }
+        if (thinkContent) {
+          const thinkDiv = document.createElement('div');
+          thinkDiv.className = 'think-block';
+          thinkDiv.textContent = thinkContent;
+          bubble.appendChild(thinkDiv);
+        }
+        const contentDiv = document.createElement('div');
+        contentDiv.innerHTML = renderMarkdownWithFeatures(content);
+        bubble.appendChild(contentDiv);
         div.appendChild(bubble);
       }
+      
+      const footer = document.createElement('div');
+      footer.className = 'message-footer';
+      footer.innerHTML = `<button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> 复制</button>`;
+      div.appendChild(footer);
+      
       messagesContainer.appendChild(div);
       scrollToBottom();
       return bubble;
     }
+
+    window.copyMessageContent = function(btn) {
+      const messageDiv = btn.closest('.message');
+      const bubble = messageDiv.querySelector('.bubble');
+      const textToCopy = bubble.innerText || bubble.textContent;
+      navigator.clipboard?.writeText(textToCopy).then(() => {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-regular fa-check"></i> 已复制';
+        setTimeout(() => btn.innerHTML = originalHtml, 1500);
+      }).catch(() => alert('复制失败'));
+    };
 
     function addTypingIndicator() {
       const div = document.createElement('div');
@@ -681,15 +825,24 @@
       for (let i = currentModelIndex; i < MODEL_OPTIONS.length; i++) {
         const model = MODEL_OPTIONS[i];
         try {
+          const params = {
+            model, messages: conversationMessages,
+            temperature: parseFloat(tempSlider.value),
+            top_p: parseFloat(topPSlider.value),
+            frequency_penalty: parseFloat(freqSlider.value),
+            presence_penalty: parseFloat(presSlider.value),
+            max_tokens: parseInt(maxTokensInput.value) || 4096,
+            stream: streamCheck.checked,
+            ...(webSearchEnabled && { web_search: true }),
+            ...(deepSearchEnabled && { deep_search: true })
+          };
+          const seedVal = seedInput.value.trim();
+          if (seedVal) params.seed = parseInt(seedVal);
+          
           const response = await fetch(`${API_BASE}/v1/chat/completions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
-            body: JSON.stringify({
-              model, messages: conversationMessages, stream: true,
-              temperature: 0.7,
-              ...(webSearchEnabled && { web_search: true }),
-              ...(deepSearchEnabled && { deep_search: true })
-            }),
+            body: JSON.stringify(params),
             signal: currentController.signal
           });
           if (response.ok) { currentModelIndex = i; return response; }
@@ -728,13 +881,28 @@
         const assistantDiv = document.createElement('div');
         assistantDiv.className = 'message assistant';
         const bubble = document.createElement('div');
-        bubble.className = 'bubble'; bubble.innerHTML = '';
+        bubble.className = 'bubble';
         assistantDiv.appendChild(bubble);
+        const footer = document.createElement('div');
+        footer.className = 'message-footer';
+        footer.innerHTML = `<button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> 复制</button>`;
+        assistantDiv.appendChild(footer);
         messagesContainer.appendChild(assistantDiv);
+        
+        if (!streamCheck.checked) {
+          const data = await response.json();
+          const reply = data.choices[0].message.content;
+          bubble.innerHTML = renderMarkdownWithFeatures(reply);
+          conversationMessages.push({ role: 'assistant', content: reply });
+          tokenBalance = Math.max(0, tokenBalance - Math.floor(reply.length / 2 + 50));
+          updateTokenDisplay();
+          return;
+        }
         
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let full = '', buffer = '';
+        let full = '', buffer = '', thinkText = '';
+        let searchRefs = [];
         
         while (true) {
           const { done, value } = await reader.read();
@@ -745,8 +913,18 @@
             if (line.startsWith('data: ')) {
               try {
                 const json = JSON.parse(line.slice(6));
-                const delta = json.choices?.[0]?.delta?.content;
-                if (delta) { full += delta; bubble.innerHTML = renderMarkdownWithFeatures(full); scrollToBottom(); }
+                const delta = json.choices?.[0]?.delta;
+                if (delta) {
+                  if (delta.reasoning_content) thinkText += delta.reasoning_content;
+                  if (delta.content) full += delta.content;
+                  if (json.search_info?.results) searchRefs = json.search_info.results;
+                  let bubbleHtml = '';
+                  if (searchRefs.length) bubbleHtml += `<div class="search-refs"><strong>搜索参考:</strong><br>` + searchRefs.map(ref => `<a href="${ref.url}" target="_blank">${ref.title}</a>`).join('') + `</div>`;
+                  if (thinkText) bubbleHtml += `<div class="think-block">${thinkText}</div>`;
+                  bubbleHtml += renderMarkdownWithFeatures(full);
+                  bubble.innerHTML = bubbleHtml;
+                  scrollToBottom();
+                }
               } catch(e) {}
             }
           }
@@ -767,69 +945,39 @@
     }
 
     function stopGeneration() {
-      if (currentController) {
-        currentController.abort();
-        currentController = null;
-      }
+      if (currentController) { currentController.abort(); currentController = null; }
       isLoading = false;
       sendBtn.style.display = 'inline-flex';
       stopBtn.style.display = 'none';
       removeTypingIndicator();
     }
 
-    function clearConversation() {
+    function resetChat() {
       messagesContainer.innerHTML = '';
       const welcomeDiv = document.createElement('div');
       welcomeDiv.className = 'message assistant';
-      welcomeDiv.innerHTML = `<div class="bubble">你好，我是 <strong>简言</strong>，由 B站 yast喵~ 开发。<br>支持联网搜索、深度求索，可上传多种文件。<br>点击右上角「设置」查看更多功能。</div>`;
+      welcomeDiv.innerHTML = `<div class="bubble">你好，我是 <strong>简言</strong>，由 B站 yast喵~ 开发。<br>支持联网搜索、深度求索，可上传多种文件。<br>点击右上角「设置」查看更多功能。</div><div class="message-footer"><button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> 复制</button></div>`;
       messagesContainer.appendChild(welcomeDiv);
-      conversationMessages = [];
+      conversationMessages = [conversationMessages[0]];
     }
 
-    function exportConversation() {
-      const messages = [];
-      document.querySelectorAll('.message').forEach(msg => {
-        const bubble = msg.querySelector('.bubble');
-        if (!bubble) return;
-        const role = msg.classList.contains('user') ? '用户' : '简言';
-        const text = bubble.innerText || bubble.textContent;
-        messages.push(`${role}: ${text}`);
-      });
-      const blob = new Blob([messages.join('\n\n')], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `简言对话_${new Date().toISOString().slice(0,10)}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
+    function clearHistoryList() { historyListContainer.innerHTML = ''; }
 
-    function clearHistoryList() {
-      historyListContainer.innerHTML = '';
-    }
-
-    function exportHistoryList() {
-      const items = historyListContainer.querySelectorAll('.history-item');
-      const lines = Array.from(items).map(item => item.textContent.trim());
-      const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = '简言历史记录.txt';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    window.restoreHistory = (text) => {
-      userInput.value = text;
-      closeAllSidebars();
-    };
+    window.deleteHistoryItem = function(el) { el.closest('.history-item').remove(); };
+    window.restoreHistory = (text) => { userInput.value = text; closeAllSidebars(); };
 
     function closeAllSidebars() {
       historySidebar.classList.remove('open');
       settingsSidebar.classList.remove('open');
       overlay.classList.remove('show');
     }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+        e.preventDefault();
+        return false;
+      }
+    });
 
     userInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
@@ -841,7 +989,6 @@
 
     sendBtn.addEventListener('click', handleSend);
     stopBtn.addEventListener('click', stopGeneration);
-
     historyToggleBtn.addEventListener('click', () => {
       settingsSidebar.classList.remove('open');
       historySidebar.classList.add('open');
@@ -855,17 +1002,12 @@
     });
     closeSettingsBtn.addEventListener('click', closeAllSidebars);
     overlay.addEventListener('click', closeAllSidebars);
-    
-    yastDevBtn.addEventListener('click', () => {
-      window.open('https://space.bilibili.com/3546774769765189', '_blank');
-    });
-
-    clearConversationBtn.addEventListener('click', clearConversation);
-    exportConversationBtn.addEventListener('click', exportConversation);
+    yastDevBtn.addEventListener('click', () => window.open('https://space.bilibili.com/3546774769765189', '_blank'));
+    resetChatBtn.addEventListener('click', resetChat);
     clearAllHistoryBtn.addEventListener('click', clearHistoryList);
-    exportHistoryBtn.addEventListener('click', exportHistoryList);
 
     updateTokenDisplay();
+    applyLanguage('zh');
   })();
 </script>
 </body>
