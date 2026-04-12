@@ -97,12 +97,15 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
     }
-    .signin-btn {
+    .signin-btn, .qq-bind-btn, .sponsor-btn {
       background: #1a1f2e; color: white; border: none;
       padding: 8px 16px; border-radius: 40px; font-size: 13px; font-weight: 500;
       cursor: pointer; display: flex; align-items: center; gap: 6px;
     }
+    .sponsor-btn { background: #ff6b9d; }
     .signin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .ad-card {
       margin-top: 16px;
@@ -331,7 +334,7 @@
     }
     .preview-modal.show { display: flex; }
     .preview-content {
-      background: white; border-radius: 24px; max-width: 800px; max-height: 80vh;
+      background: white; border-radius: 24px; max-width: 900px; max-height: 80vh;
       width: 90%; overflow: auto; padding: 24px; position: relative;
     }
     .preview-header {
@@ -372,6 +375,8 @@
         <div class="token-label"><span data-i18n="availableCredit">可用额度 · 无需注册</span></div>
         <div class="signin-area">
           <button class="signin-btn" id="signinBtn"><i class="fa-regular fa-calendar-check"></i> <span data-i18n="signin">签到</span></button>
+          <button class="qq-bind-btn" id="qqBindBtn"><i class="fa-brands fa-qq"></i> 绑定QQ</button>
+          <button class="sponsor-btn" id="sponsorBtn"><i class="fa-solid fa-heart"></i> 赞助</button>
           <span style="font-size:13px; color:#3d5775;" id="signinStatus"></span>
         </div>
         <div id="adContainer"></div>
@@ -523,22 +528,17 @@
     });
     document.addEventListener('contextmenu', e => e.preventDefault());
     
-    // 检测开发者工具打开并采取措施（轻微防护）
     let devtoolsOpen = false;
     const threshold = 160;
-    const checkDevTools = () => {
+    setInterval(() => {
         const widthThreshold = window.outerWidth - window.innerWidth > threshold;
         const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-        if (widthThreshold || heightThreshold) {
-            if (!devtoolsOpen) {
-                devtoolsOpen = true;
-                
-            }
-        } else {
+        if ((widthThreshold || heightThreshold) && !devtoolsOpen) {
+            devtoolsOpen = true;
+        } else if (!widthThreshold && !heightThreshold) {
             devtoolsOpen = false;
         }
-    };
-    setInterval(checkDevTools, 1000);
+    }, 1000);
 
     const API_KEY = 'sk-HH8qKvugcKzbIYdD9jpiTrl6L1LYafABTJfWjH6VpvzMO3hW';
     const API_BASE = 'https://api.gemapi.ai';
@@ -563,8 +563,13 @@
       AD_CLICKED: 'jianyan_ad_clicked',
       HISTORY: 'jianyan_history',
       SETTINGS: 'jianyan_settings',
-      SIGN_DATE: 'jianyan_sign_date'
+      SIGN_DATE: 'jianyan_sign_date',
+      QQ_BOUND: 'jianyan_qq_bound',
+      QQ_NUMBER: 'jianyan_qq_number'
     };
+
+    // 修复后的历史记录管理
+    let historyItems = [];
 
     function loadFromStorage() {
       try {
@@ -576,8 +581,8 @@
         
         const savedHistory = localStorage.getItem(STORAGE_KEYS.HISTORY);
         if (savedHistory) {
-          const items = JSON.parse(savedHistory);
-          items.forEach(item => addHistoryItemToDom(item.title, item.message));
+          historyItems = JSON.parse(savedHistory);
+          renderHistoryList();
         } else {
           initDefaultHistory();
         }
@@ -627,16 +632,49 @@
     }
 
     function saveHistoryList() {
-      const items = [];
-      document.querySelectorAll('#historyListContainer .history-item').forEach(el => {
-        const title = el.childNodes[2]?.textContent?.trim() || '';
-        const onclick = el.getAttribute('onclick') || '';
-        const match = onclick.match(/'([^']+)'/);
-        const message = match ? match[1] : '';
-        if (title && message) items.push({ title, message });
-      });
-      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(items));
+      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(historyItems));
     }
+
+    function renderHistoryList() {
+      const container = document.getElementById('historyListContainer');
+      container.innerHTML = '';
+      historyItems.slice().reverse().forEach(item => {
+        addHistoryItemToDom(item.title, item.message);
+      });
+    }
+
+    function addHistoryItemToDom(title, userMessage) {
+      const container = document.getElementById('historyListContainer');
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.setAttribute('onclick', `restoreHistory('${userMessage.replace(/'/g, "\\'")}')`);
+      div.innerHTML = `<i class="fa-regular fa-message"></i> ${title}<span class="delete-history" onclick="event.stopPropagation();deleteHistoryItem(this)"><i class="fa-regular fa-trash-can"></i></span>`;
+      container.prepend(div);
+    }
+
+    function addHistoryItem(title, userMessage) {
+      historyItems.push({ title, message: userMessage });
+      addHistoryItemToDom(title, userMessage);
+      saveHistoryList();
+    }
+
+    function initDefaultHistory() {
+      historyItems = [
+        { title: '你好，介绍一下简言', message: '你好，介绍一下简言' },
+        { title: '用Python写一个快速排序', message: '用Python写一个快速排序' },
+        { title: '生成一个员工表(姓名,年龄,部门)', message: '生成一个员工表(姓名,年龄,部门)' }
+      ];
+      saveHistoryList();
+      renderHistoryList();
+    }
+
+    window.deleteHistoryItem = function(el) { 
+      const itemDiv = el.closest('.history-item');
+      const title = itemDiv.childNodes[2]?.textContent?.trim() || '';
+      historyItems = historyItems.filter(item => item.title !== title);
+      itemDiv.remove(); 
+      saveHistoryList();
+    };
 
     function updateSliderDisplays() {
       document.getElementById('tempValue').textContent = document.getElementById('temperature').value;
@@ -653,7 +691,9 @@
         dark: '深色', light: '浅色', language: '语言', conversation: '对话管理', resetChat: '重置聊天数据',
         about: '关于', webSearch: '联网搜索', deepSearch: '深度求索', inputPlaceholder: '输入消息… (Enter发送，Shift+Enter换行)',
         signedToday: '今日已签到', signSuccess: '签到成功 +', signClosed: '签到已关闭',
-        copy: '复制', copied: '已复制', searchRef: '搜索参考'
+        copy: '复制', copied: '已复制', searchRef: '搜索参考',
+        qqBound: 'QQ已绑定', qqBindSuccess: '绑定成功！赠送300余额', qqInvalid: '请输入正确的QQ号',
+        qqAlreadyBound: '该QQ号已被绑定', qqAlreadyBoundLocal: '您已经绑定过QQ了'
       },
       en: {
         history: 'History', clearHistory: 'Clear History', settings: 'Settings', balance: 'Balance',
@@ -662,7 +702,9 @@
         dark: 'Dark', light: 'Light', language: 'Language', conversation: 'Conversation', resetChat: 'Reset Chat',
         about: 'About', webSearch: 'Web Search', deepSearch: 'Deep Search', inputPlaceholder: 'Type a message… (Enter to send)',
         signedToday: 'Checked in today', signSuccess: 'Check-in +', signClosed: 'Check-in closed',
-        copy: 'Copy', copied: 'Copied', searchRef: 'Search References'
+        copy: 'Copy', copied: 'Copied', searchRef: 'Search References',
+        qqBound: 'QQ Bound', qqBindSuccess: 'Bind success! +300 balance', qqInvalid: 'Invalid QQ number',
+        qqAlreadyBound: 'This QQ is already bound', qqAlreadyBoundLocal: 'You have already bound a QQ'
       }
     };
 
@@ -716,10 +758,11 @@
     const previewBody = document.getElementById('previewBody');
     const resetChatBtn = document.getElementById('resetChatBtn');
     const clearAllHistoryBtn = document.getElementById('clearAllHistoryBtn');
-    const historyListContainer = document.getElementById('historyListContainer');
     const signinBtn = document.getElementById('signinBtn');
     const signinStatus = document.getElementById('signinStatus');
     const newChatBtn = document.getElementById('newChatBtn');
+    const qqBindBtn = document.getElementById('qqBindBtn');
+    const sponserBtn = document.getElementById('sponsorBtn');
     const hljsDark = document.getElementById('hljs-dark');
     const hljsLight = document.getElementById('hljs-light');
 
@@ -790,6 +833,39 @@
       signinBtn.disabled = true;
       signinStatus.textContent = i18n[currentLanguage].signSuccess + reward;
       setTimeout(() => signinStatus.textContent = i18n[currentLanguage].signedToday, 2000);
+    });
+
+    // QQ绑定
+    qqBindBtn.addEventListener('click', () => {
+      const boundQQ = localStorage.getItem(STORAGE_KEYS.QQ_NUMBER);
+      if (boundQQ) {
+        alert(i18n[currentLanguage].qqAlreadyBoundLocal);
+        return;
+      }
+      const qq = prompt('请输入您的QQ号码（仅能绑定一次，绑定后赠送300余额）:');
+      if (!qq) return;
+      if (!/^\d{5,11}$/.test(qq)) {
+        alert(i18n[currentLanguage].qqInvalid);
+        return;
+      }
+      // 模拟检查是否已被绑定（前端仅能检查当前浏览器，真实场景需后端）
+      const usedQQs = JSON.parse(localStorage.getItem('used_qq_list') || '[]');
+      if (usedQQs.includes(qq)) {
+        alert(i18n[currentLanguage].qqAlreadyBound);
+        return;
+      }
+      // 绑定成功
+      usedQQs.push(qq);
+      localStorage.setItem('used_qq_list', JSON.stringify(usedQQs));
+      localStorage.setItem(STORAGE_KEYS.QQ_NUMBER, qq);
+      localStorage.setItem(STORAGE_KEYS.QQ_BOUND, 'true');
+      tokenBalance += 300 * 10000; // 300余额
+      updateTokenDisplay();
+      alert(i18n[currentLanguage].qqBindSuccess);
+    });
+
+    sponserBtn.addEventListener('click', () => {
+      window.open('https://ifdian.net/a/yastmiao', '_blank');
     });
 
     function renderAd() {
@@ -887,26 +963,6 @@
     }
 
     window.closePreview = () => previewModal.classList.remove('show');
-
-    function addHistoryItemToDom(title, userMessage) {
-      const div = document.createElement('div');
-      div.className = 'history-item';
-      div.setAttribute('onclick', `restoreHistory('${userMessage.replace(/'/g, "\\'")}')`);
-      div.innerHTML = `<i class="fa-regular fa-message"></i> ${title}<span class="delete-history" onclick="event.stopPropagation();deleteHistoryItem(this)"><i class="fa-regular fa-trash-can"></i></span>`;
-      historyListContainer.prepend(div);
-    }
-
-    function addHistoryItem(title, userMessage) {
-      addHistoryItemToDom(title, userMessage);
-      saveHistoryList();
-    }
-
-    function initDefaultHistory() {
-      addHistoryItemToDom('你好，介绍一下简言', '你好，介绍一下简言');
-      addHistoryItemToDom('用Python写一个快速排序', '用Python写一个快速排序');
-      addHistoryItemToDom('生成一个员工表(姓名,年龄,部门)', '生成一个员工表(姓名,年龄,部门)');
-      saveHistoryList();
-    }
 
     async function generateTitleWithAI(userMessage, aiResponse) {
       try {
@@ -1157,15 +1213,12 @@
     }
 
     function clearHistoryList() { 
-      historyListContainer.innerHTML = ''; 
+      historyItems = [];
+      document.getElementById('historyListContainer').innerHTML = ''; 
       localStorage.removeItem(STORAGE_KEYS.HISTORY);
       initDefaultHistory();
     }
 
-    window.deleteHistoryItem = function(el) { 
-      el.closest('.history-item').remove(); 
-      saveHistoryList();
-    };
     window.restoreHistory = (text) => { userInput.value = text; closeAllSidebars(); };
 
     function closeAllSidebars() {
