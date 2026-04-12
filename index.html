@@ -293,6 +293,9 @@
       background: #1a1f2e; border: none; width: 48px; height: 48px;
       border-radius: 48px; color: white; font-size: 20px; cursor: pointer;
       transition: 0.15s; border: 1px solid #2d3445;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .stop-btn { background: #b91c1c; border-color: #991b1b; display: none; }
     .send-btn:disabled, .stop-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -343,9 +346,6 @@
       <button class="close-sidebar" id="closeHistoryBtn"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="history-list" id="historyListContainer">
-      <div class="history-item" onclick="restoreHistory('你好，介绍一下简言')"><i class="fa-regular fa-message"></i> 你好，介绍一下简言<span class="delete-history" onclick="event.stopPropagation();deleteHistoryItem(this)"><i class="fa-regular fa-trash-can"></i></span></div>
-      <div class="history-item" onclick="restoreHistory('用Python写一个快速排序')"><i class="fa-regular fa-message"></i> 用Python写一个快速排序<span class="delete-history" onclick="event.stopPropagation();deleteHistoryItem(this)"><i class="fa-regular fa-trash-can"></i></span></div>
-      <div class="history-item" onclick="restoreHistory('生成一个员工表(姓名,年龄,部门)')"><i class="fa-regular fa-message"></i> 生成一个员工表<span class="delete-history" onclick="event.stopPropagation();deleteHistoryItem(this)"><i class="fa-regular fa-trash-can"></i></span></div>
     </div>
     <div class="history-actions">
       <button class="action-btn" id="clearAllHistoryBtn"><i class="fa-regular fa-trash-can"></i> <span data-i18n="clearHistory">清空历史</span></button>
@@ -476,7 +476,7 @@
           支持联网搜索、深度求索，可上传多种文件。<br>
           点击右上角「设置」查看更多功能。
         </div>
-        <div class="message-footer"><button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> 复制</button></div>
+        <div class="message-footer"><button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> <span data-i18n="copy">复制</span></button></div>
       </div>
     </div>
   </div>
@@ -513,11 +513,12 @@
     }];
     let isLoading = false;
     let currentController = null;
-    let tokenBalance = 15000000; 
+    let tokenBalance = 1500000; 
     let adClicked = false;
     let webSearchEnabled = false;
     let deepSearchEnabled = false;
     let currentLanguage = 'zh';
+    let isNewConversation = true;
 
     const i18n = {
       zh: {
@@ -526,7 +527,8 @@
         fontSize: '字体大小', small: '小', medium: '中', large: '大', codeTheme: '代码主题',
         dark: '深色', light: '浅色', language: '语言', conversation: '对话管理', resetChat: '重置聊天数据',
         about: '关于', webSearch: '联网搜索', deepSearch: '深度求索', inputPlaceholder: '输入消息… (Enter发送，Shift+Enter换行)',
-        signedToday: '今日已签到', signSuccess: '签到成功 +', signClosed: '签到已关闭'
+        signedToday: '今日已签到', signSuccess: '签到成功 +', signClosed: '签到已关闭',
+        copy: '复制', copied: '已复制', searchRef: '搜索参考'
       },
       en: {
         history: 'History', clearHistory: 'Clear History', settings: 'Settings', balance: 'Balance',
@@ -534,7 +536,8 @@
         fontSize: 'Font Size', small: 'Small', medium: 'Medium', large: 'Large', codeTheme: 'Code Theme',
         dark: 'Dark', light: 'Light', language: 'Language', conversation: 'Conversation', resetChat: 'Reset Chat',
         about: 'About', webSearch: 'Web Search', deepSearch: 'Deep Search', inputPlaceholder: 'Type a message… (Enter to send)',
-        signedToday: 'Checked in today', signSuccess: 'Check-in +', signClosed: 'Check-in closed'
+        signedToday: 'Checked in today', signSuccess: 'Check-in +', signClosed: 'Check-in closed',
+        copy: 'Copy', copied: 'Copied', searchRef: 'Search References'
       }
     };
 
@@ -555,6 +558,9 @@
       const codeThemeSelect = document.getElementById('codeThemeSelect');
       codeThemeSelect.options[0].text = i18n[lang].dark;
       codeThemeSelect.options[1].text = i18n[lang].light;
+      document.querySelectorAll('.copy-message-btn span').forEach(span => {
+        if (span.getAttribute('data-i18n') === 'copy') span.textContent = i18n[lang].copy;
+      });
       updateSigninStatus();
     }
 
@@ -698,14 +704,14 @@
         const headerDiv = document.createElement('div');
         headerDiv.className = 'code-block-header';
         headerDiv.innerHTML = `
-          <button class="code-btn copy-code"><i class="fa-regular fa-copy"></i> 复制</button>
+          <button class="code-btn copy-code"><i class="fa-regular fa-copy"></i> ${i18n[currentLanguage].copy}</button>
           <button class="code-btn preview-code"><i class="fa-regular fa-eye"></i> 预览</button>
           <button class="code-btn download-code"><i class="fa-solid fa-download"></i> 下载</button>
         `;
         pre.parentNode.insertBefore(headerDiv, pre);
         headerDiv.querySelector('.copy-code').addEventListener('click', (e) => {
           e.stopPropagation();
-          navigator.clipboard?.writeText(codeText).then(() => alert('代码已复制')).catch(() => alert('复制失败'));
+          navigator.clipboard?.writeText(codeText).then(() => alert(i18n[currentLanguage].copied)).catch(() => alert('复制失败'));
         });
         headerDiv.querySelector('.preview-code').addEventListener('click', (e) => {
           e.stopPropagation();
@@ -753,6 +759,39 @@
 
     window.closePreview = () => previewModal.classList.remove('show');
 
+    function addHistoryItem(title, userMessage) {
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.setAttribute('onclick', `restoreHistory('${userMessage.replace(/'/g, "\\'")}')`);
+      div.innerHTML = `<i class="fa-regular fa-message"></i> ${title}<span class="delete-history" onclick="event.stopPropagation();deleteHistoryItem(this)"><i class="fa-regular fa-trash-can"></i></span>`;
+      historyListContainer.prepend(div);
+    }
+
+    function generateConversationTitle(userMessage, aiResponse) {
+      const combined = (userMessage + ' ' + aiResponse).substring(0, 100);
+      const words = combined.split(/\s+/).slice(0, 5);
+      return words.join(' ') + (words.length >= 5 ? '...' : '');
+    }
+
+    async function generateTitleWithAI(userMessage, aiResponse) {
+      try {
+        const res = await fetch(`${API_BASE}/v1/chat/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+          body: JSON.stringify({
+            model: MODEL_OPTIONS[0],
+            messages: [{ role: 'user', content: `用不超过10个字概括以下对话的主题：用户说“${userMessage}”，AI回复了“${aiResponse.substring(0, 100)}”。只返回标题文本。` }],
+            max_tokens: 20,
+            temperature: 0.5
+          })
+        });
+        const data = await res.json();
+        return data.choices[0].message.content.trim();
+      } catch (e) {
+        return generateConversationTitle(userMessage, aiResponse);
+      }
+    }
+
     function appendMessage(role, content, attachment = null, thinkContent = null, searchRefs = null) {
       const div = document.createElement('div');
       div.className = `message ${role}`;
@@ -772,7 +811,7 @@
         if (searchRefs && searchRefs.length) {
           const refsDiv = document.createElement('div');
           refsDiv.className = 'search-refs';
-          refsDiv.innerHTML = '<strong>搜索参考:</strong><br>' + searchRefs.map(ref => `<a href="${ref.url}" target="_blank">${ref.title}</a>`).join('');
+          refsDiv.innerHTML = `<strong>${i18n[currentLanguage].searchRef}:</strong><br>` + searchRefs.map(ref => `<a href="${ref.url}" target="_blank">${ref.title}</a>`).join('');
           bubble.appendChild(refsDiv);
         }
         if (thinkContent) {
@@ -789,12 +828,12 @@
       
       const footer = document.createElement('div');
       footer.className = 'message-footer';
-      footer.innerHTML = `<button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> 复制</button>`;
+      footer.innerHTML = `<button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> <span data-i18n="copy">${i18n[currentLanguage].copy}</span></button>`;
       div.appendChild(footer);
       
       messagesContainer.appendChild(div);
       scrollToBottom();
-      return bubble;
+      return { messageDiv: div, bubble, footer };
     }
 
     window.copyMessageContent = function(btn) {
@@ -802,9 +841,10 @@
       const bubble = messageDiv.querySelector('.bubble');
       const textToCopy = bubble.innerText || bubble.textContent;
       navigator.clipboard?.writeText(textToCopy).then(() => {
-        const originalHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-regular fa-check"></i> 已复制';
-        setTimeout(() => btn.innerHTML = originalHtml, 1500);
+        const span = btn.querySelector('span');
+        const originalText = span.textContent;
+        span.textContent = i18n[currentLanguage].copied;
+        setTimeout(() => span.textContent = originalText, 1500);
       }).catch(() => alert('复制失败'));
     };
 
@@ -866,6 +906,7 @@
       
       appendMessage('user', content, file);
       conversationMessages.push({ role: 'user', content: userContent });
+      const userMessageForTitle = content;
       
       userInput.value = ''; userInput.style.height = 'auto'; fileInput.value = '';
       isLoading = true; 
@@ -885,7 +926,7 @@
         assistantDiv.appendChild(bubble);
         const footer = document.createElement('div');
         footer.className = 'message-footer';
-        footer.innerHTML = `<button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> 复制</button>`;
+        footer.innerHTML = `<button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> <span data-i18n="copy">${i18n[currentLanguage].copy}</span></button>`;
         assistantDiv.appendChild(footer);
         messagesContainer.appendChild(assistantDiv);
         
@@ -896,6 +937,11 @@
           conversationMessages.push({ role: 'assistant', content: reply });
           tokenBalance = Math.max(0, tokenBalance - Math.floor(reply.length / 2 + 50));
           updateTokenDisplay();
+          if (isNewConversation) {
+            const title = await generateTitleWithAI(userMessageForTitle, reply);
+            addHistoryItem(title, userMessageForTitle);
+            isNewConversation = false;
+          }
           return;
         }
         
@@ -919,7 +965,7 @@
                   if (delta.content) full += delta.content;
                   if (json.search_info?.results) searchRefs = json.search_info.results;
                   let bubbleHtml = '';
-                  if (searchRefs.length) bubbleHtml += `<div class="search-refs"><strong>搜索参考:</strong><br>` + searchRefs.map(ref => `<a href="${ref.url}" target="_blank">${ref.title}</a>`).join('') + `</div>`;
+                  if (searchRefs.length) bubbleHtml += `<div class="search-refs"><strong>${i18n[currentLanguage].searchRef}:</strong><br>` + searchRefs.map(ref => `<a href="${ref.url}" target="_blank">${ref.title}</a>`).join('') + `</div>`;
                   if (thinkText) bubbleHtml += `<div class="think-block">${thinkText}</div>`;
                   bubbleHtml += renderMarkdownWithFeatures(full);
                   bubble.innerHTML = bubbleHtml;
@@ -929,8 +975,14 @@
             }
           }
         }
-        if (full) conversationMessages.push({ role: 'assistant', content: full });
-        else bubble.innerHTML = '_(未返回内容)_';
+        if (full) {
+          conversationMessages.push({ role: 'assistant', content: full });
+          if (isNewConversation) {
+            const title = await generateTitleWithAI(userMessageForTitle, full);
+            addHistoryItem(title, userMessageForTitle);
+            isNewConversation = false;
+          }
+        } else bubble.innerHTML = '_(未返回内容)_';
         tokenBalance = Math.max(0, tokenBalance - Math.floor(full.length / 2 + 50));
         updateTokenDisplay();
       } catch (e) {
@@ -956,9 +1008,10 @@
       messagesContainer.innerHTML = '';
       const welcomeDiv = document.createElement('div');
       welcomeDiv.className = 'message assistant';
-      welcomeDiv.innerHTML = `<div class="bubble">你好，我是 <strong>简言</strong>，由 B站 yast喵~ 开发。<br>支持联网搜索、深度求索，可上传多种文件。<br>点击右上角「设置」查看更多功能。</div><div class="message-footer"><button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> 复制</button></div>`;
+      welcomeDiv.innerHTML = `<div class="bubble">你好，我是 <strong>简言</strong>，由 B站 yast喵~ 开发。<br>支持联网搜索、深度求索，可上传多种文件。<br>点击右上角「设置」查看更多功能。</div><div class="message-footer"><button class="copy-message-btn" onclick="copyMessageContent(this)"><i class="fa-regular fa-copy"></i> <span data-i18n="copy">${i18n[currentLanguage].copy}</span></button></div>`;
       messagesContainer.appendChild(welcomeDiv);
       conversationMessages = [conversationMessages[0]];
+      isNewConversation = true;
     }
 
     function clearHistoryList() { historyListContainer.innerHTML = ''; }
@@ -1006,6 +1059,15 @@
     resetChatBtn.addEventListener('click', resetChat);
     clearAllHistoryBtn.addEventListener('click', clearHistoryList);
 
+    function initWelcomeHistory() {
+      const items = historyListContainer.children;
+      if (items.length === 0) {
+        addHistoryItem('你好，介绍一下简言', '你好，介绍一下简言');
+        addHistoryItem('用Python写一个快速排序', '用Python写一个快速排序');
+        addHistoryItem('生成一个员工表(姓名,年龄,部门)', '生成一个员工表(姓名,年龄,部门)');
+      }
+    }
+    initWelcomeHistory();
     updateTokenDisplay();
     applyLanguage('zh');
   })();
